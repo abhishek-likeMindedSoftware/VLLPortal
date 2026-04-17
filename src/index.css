@@ -1,0 +1,508 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600;1,800&display=swap');
+@import "tailwindcss";
+
+/* ── VLL Design Tokens — mirrors FILIR design language ─────────────────── */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2ecc71;
+  --font-family: "Poppins", sans-serif;
+  --dark-color: #222222;
+  --theme-color: #0265A3;
+  --white-color: #ffffff;
+  --mass-green: #006d44;
+  --portal-blue: #0a5fa8;
+  --mass-gray: #f5f7f8;
+  --mass-primary-green: #388557;
+  --ms-gray-dark: #535353;
+
+  --text-xl: 36px;
+  --text-xl-med: 32px;
+  --text-lg: 28px;
+  --text-lg-med: 24px;
+  --text-med: 20px;
+  --text-base-med: 18px;
+  --text-base: 16px;
+  --text-sm: 14px;
+  --text-xs: 12px;
+
+  --sidebar-width: 240px;
+}
+
+/* ── Base ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html { font-size: 16px; scroll-behavior: auto; }
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family);
+  color: var(--dark-color);
+  font-size: var(--text-base);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--theme-color); }
+
+/* ── Focus (WCAG 2.1 AA) ─────────────────────────────────────────────────── */
+*:focus { outline: none; }
+*:focus-visible {
+  outline: 2px solid #000 !important;
+  outline-offset: 2px !important;
+}
+
+/* ── Skip link ───────────────────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: var(--theme-color);
+  color: #fff;
+  padding: 0.5rem 1rem;
+  z-index: 9999;
+  font-weight: 600;
+  font-size: var(--text-sm);
+}
+.skip-link:focus { top: 0; }
+
+/* ── Official Banner — exact FILIR design ────────────────────────────────── */
+.official-banner {
+  background-color: #357a5b;
+  color: #fff;
+  font-size: 0.95rem;
+  width: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 3000;
+}
+.official-banner__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+.official-banner__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 6px 0;
+}
+.official-banner__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+.official-banner__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.official-banner__toggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.875rem;
+  font-family: var(--font-family);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  vertical-align: baseline;
+  line-height: 1.2;
+  display: inline;
+}
+.official-banner__toggle:hover { text-decoration: underline; }
+.official-banner__details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 12px 0 14px;
+}
+.official-banner__detail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 240px;
+  font-size: 0.875rem;
+}
+.official-banner__detail-item i {
+  flex-shrink: 0;
+  line-height: 1;
+  position: relative;
+  top: 2px;
+}
+.official-banner__detail-item p { margin: 0; line-height: 1.5; }
+.official-banner__detail-item small { color: #e6f2ed; }
+@media (max-width: 767.98px) {
+  .official-banner { font-size: 0.85rem; }
+  .official-banner__toggle { font-size: 0.8rem; }
+}
+
+/* ── Skip link — exact FILIR App.css ─────────────────────────────────────── */
+.app-skip-link {
+  position: fixed;
+  left: 8px;
+  top: -60px;
+  z-index: 20000;
+  background-color: #015080;
+  color: #fff !important;
+  padding: 10px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(2,101,163,0.28);
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.app-skip-link:focus,
+.app-skip-link:focus-visible {
+  top: calc(var(--official-banner-bar-height, 0px) + 8px);
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+  transform: translateY(0);
+  box-shadow: 0 6px 16px rgba(2,101,163,0.35);
+}
+.app-skip-link-inline {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+  box-shadow: none;
+}
+.app-skip-link-inline:focus,
+.app-skip-link-inline:focus-visible {
+  position: static;
+  width: auto; height: auto;
+  margin: 0; padding: 4px 10px;
+  overflow: visible;
+  clip: auto; clip-path: none;
+  white-space: normal;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.2;
+  box-shadow: none;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* ── App container — exact FILIR App.css ─────────────────────────────────── */
+.app-container {
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
+}
+.main-content {
+  flex-grow: 1;
+  overflow-y: auto;
+  background: #fff;
+  padding-top: var(--official-banner-bar-height, 0px);
+  box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color: #9bb7cf #eef3f8;
+}
+.main-content::-webkit-scrollbar { width: 10px; }
+.main-content::-webkit-scrollbar-track { background: #eef3f8; }
+.main-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #b8cadb 0%, #8eaeca 100%);
+  border-radius: 10px;
+  border: 2px solid #eef3f8;
+}
+.main-content::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9db8cf 0%, #6f97bc 100%);
+}
+@media (max-width: 768px) {
+  .main-content {
+    width: 100% !important;
+    overflow-x: hidden !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    padding-top: var(--official-banner-bar-height, 0px) !important;
+  }
+}
+
+/* ── Portal Banner (blue top bar) ────────────────────────────────────────── */
+.portal-banner {
+  background: var(--portal-blue);
+  color: var(--white-color);
+  padding: 10px 0;
+}
+.portal-banner .sign-in-btn {
+  color: var(--white-color);
+  font-weight: 600;
+  font-size: var(--text-sm);
+  padding: 6px 14px;
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 20px;
+  transition: all 0.2s;
+}
+.portal-banner .sign-in-btn:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ── MassGov Banner ──────────────────────────────────────────────────────── */
+.massgov-banner {
+  background: var(--white-color);
+  border-bottom: 1px solid #e6e9eb;
+  padding: 16px 0;
+}
+.massgov-banner .gov-logo {
+  color: var(--dark-color);
+  font-weight: 700;
+  font-size: var(--text-base-med);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* ── Dashboard Layout ────────────────────────────────────────────────────── */
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background: var(--mass-gray);
+}
+
+.dashboard-sidebar {
+  width: var(--sidebar-width);
+  min-height: 100vh;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease;
+  overflow: hidden;
+}
+.dashboard-sidebar.collapsed { width: 80px; }
+.dashboard-sidebar.collapsed .logo-box { padding: 0.8rem 0.5rem !important; }
+.dashboard-sidebar.collapsed .dashboard-nav-link { justify-content: center; padding: 10px; }
+.dashboard-sidebar.collapsed .dashboard-sidebar-footer { padding: 16px 8px; }
+.dashboard-sidebar nav { padding: 16px 12px; }
+
+.dashboard-main-area {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+  min-height: 100vh;
+  transition: margin-left 0.25s ease, width 0.25s ease;
+  padding: 0;
+}
+.dashboard-main-area.sidebar-collapsed {
+  margin-left: 80px;
+  width: calc(100% - 80px);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.dashboard-header-wrapper {
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  padding: 16px 40px;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.dashboard-header { display: flex; align-items: center; justify-content: space-between; }
+
+/* ── Content area ────────────────────────────────────────────────────────── */
+.dashboard-content-section { padding: 0; }
+
+.org-search-box {
+  background: #fff;
+  border-radius: 0;
+  padding: 24px;
+  border: 1px solid #e8e8e8;
+  border-left: none;
+  border-right: none;
+}
+@media (min-width: 768px) {
+  .shadow-custom.bg-white.org-search-box { padding: 40px; }
+}
+
+/* ── Sidebar Nav ─────────────────────────────────────────────────────────── */
+.dashboard-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.dashboard-nav-item { list-style: none; margin: 0; }
+.dashboard-nav-link {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--dark-color);
+  text-decoration: none;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  font-family: var(--font-family);
+}
+.dashboard-nav-link:hover,
+.dashboard-active-link {
+  background: var(--theme-color);
+  color: #fff !important;
+}
+.dashboard-nav-link:hover i,
+.dashboard-active-link i { color: #fff; }
+.dashboard-sidebar-footer { padding: 16px 12px; border-top: 1px solid #f0f0f0; }
+
+/* ── Stat Cards ──────────────────────────────────────────────────────────── */
+.stat-card {
+  padding: 1.5rem 2.25rem;
+  box-shadow: 0px 0px 10px #e7e7e7b8;
+  border-radius: 5px;
+  background: #fff;
+  border: 1px solid #0265a314;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+.stat-card-metric { min-height: 16px; justify-content: center; }
+.stat-card .stat-count {
+  font-size: var(--text-xl-med);
+  color: var(--theme-color);
+  font-weight: 700;
+  margin: 0;
+}
+.stat-title { font-size: var(--text-base); color: var(--ms-gray-dark); margin: 0; }
+
+/* ── Page heading icon ───────────────────────────────────────────────────── */
+.page-heading-icon-wrapper {
+  width: 44px; height: 44px;
+  background: rgba(2,101,163,0.08);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+.page-heading-icon { color: var(--theme-color); font-size: 1.2rem; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.btn-theme {
+  background: var(--theme-color);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: var(--font-family);
+}
+.btn-theme:hover:not(:disabled) { background: #015080; }
+.btn-theme:disabled { opacity: 0.6; cursor: not-allowed; }
+
+.btn-outline-theme {
+  background: transparent;
+  color: var(--theme-color);
+  border: 1px solid var(--theme-color);
+  border-radius: 8px;
+  padding: 9px 20px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: var(--font-family);
+}
+.btn-outline-theme:hover { background: var(--theme-color); color: #fff; }
+
+/* ── Form inputs ─────────────────────────────────────────────────────────── */
+.vll-input {
+  width: 100%;
+  border: 1px solid rgba(102,102,102,0.35);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: var(--text-base);
+  font-family: var(--font-family);
+  background: #fff;
+  color: #212529;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.vll-input:focus {
+  outline: none;
+  border-color: var(--portal-blue);
+  box-shadow: 0 0 0 3px rgba(10,95,168,0.15);
+}
+.vll-input.error { border-color: #dc3545; }
+.vll-label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 5px;
+}
+.vll-label .required { color: #dc3545; margin-left: 2px; }
+.field-error { font-size: var(--text-xs); color: #dc3545; margin-top: 4px; }
+
+/* ── Status badges ───────────────────────────────────────────────────────── */
+.status-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.75rem; padding: 3px 10px; border-radius: 4px;
+  font-weight: 600; white-space: nowrap;
+}
+.badge-submitted   { background: #dbeafe; color: #1e40af; }
+.badge-incomplete  { background: #fef3c7; color: #92400e; }
+.badge-accepted    { background: #d1fae5; color: #065f46; }
+.badge-responded   { background: #ede9fe; color: #5b21b6; }
+.badge-hearing     { background: #ffedd5; color: #9a3412; }
+.badge-decision    { background: #dcfce7; color: #166534; }
+.badge-closed      { background: #f3f4f6; color: #374151; }
+.badge-withdrawn   { background: #fee2e2; color: #991b1b; }
+
+/* ── Wizard progress ─────────────────────────────────────────────────────── */
+.wizard-step-dot {
+  width: 32px; height: 32px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.8rem; font-weight: 700; border: 2px solid;
+  transition: all 0.2s;
+}
+.wizard-step-dot.complete  { background: var(--mass-primary-green); border-color: var(--mass-primary-green); color: #fff; }
+.wizard-step-dot.current   { background: var(--theme-color); border-color: var(--theme-color); color: #fff; }
+.wizard-step-dot.pending   { background: #fff; border-color: #d1d5db; color: #9ca3af; }
+
+/* ── Tables ──────────────────────────────────────────────────────────────── */
+.vll-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.vll-table thead th {
+  background: #f9fafb; font-weight: 600; font-size: 0.875rem;
+  color: #374151; padding: 14px 20px; border-bottom: 1px solid #e5e7eb;
+  text-align: left;
+}
+.vll-table tbody td {
+  padding: 14px 20px; font-size: 0.875rem; color: #1f2937;
+  border-bottom: 1px solid #f3f4f6; vertical-align: middle;
+}
+.vll-table tbody tr:hover { background: #f9fafb; }
+.vll-table tbody tr:last-child td { border-bottom: none; }
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.vll-card {
+  background: #fff; border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* ── Aging color ─────────────────────────────────────────────────────────── */
+.aging-green { color: #065f46; font-weight: 600; }
+.aging-amber { color: #92400e; font-weight: 600; }
+.aging-red   { color: #991b1b; font-weight: 600; }
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+@media (max-width: 991.98px) {
+  .dashboard-sidebar { display: none; }
+  .dashboard-main-area { margin-left: 0; width: 100%; }
+  .dashboard-header-wrapper { padding: 12px 16px; }
+}
