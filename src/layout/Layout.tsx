@@ -8,7 +8,7 @@ export default function Layout({ children }: Props) {
   return (
     <div style={{ minHeight: '100%', display: 'flex', flexDirection: 'column' }}>
       <Header />
-      <div id="page-content" style={{ flex: 1, maxWidth: 1200, margin: '0 auto', width: '100%', padding: '40px 20px' }}>
+      <div id="page-content" style={{ flex: 1, maxWidth: 1200, margin: '0 auto', width: '100%', padding: '24px 20px 40px' }}>
         {children}
       </div>
       <Footer />
