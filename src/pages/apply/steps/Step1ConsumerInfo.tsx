@@ -4,6 +4,7 @@ import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
 import { saveStep1 } from '@/services/applicationService'
 import { toast } from 'react-toastify'
+import AddressAutocomplete from '@/components/shared/AddressAutocomplete'
 
 interface ConsumerForm {
   firstName: string; lastName: string; middleName: string
@@ -11,6 +12,7 @@ interface ConsumerForm {
   phoneNumber: string; phoneType: string
   addressLine1: string; addressLine2: string
   city: string; state: string; zipCode: string
+  placeId: string
   preferredContactMethod: string
 }
 
@@ -20,6 +22,7 @@ const INITIAL: ConsumerForm = {
   phoneNumber: '', phoneType: 'MOBILE',
   addressLine1: '', addressLine2: '',
   city: '', state: 'MA', zipCode: '',
+  placeId: '',
   preferredContactMethod: 'EMAIL',
 }
 
@@ -99,6 +102,7 @@ export default function Step1ConsumerInfo() {
         city: form.city,
         state: form.state,
         zipCode: form.zipCode,
+        placeId: form.placeId || undefined,
         preferredContactMethod: form.preferredContactMethod,
       })
       if (!res.success) {
@@ -153,13 +157,35 @@ export default function Step1ConsumerInfo() {
 
         <div style={{ gridColumn: 'span 2', marginTop: 8 }}>
           <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--dark-color)', marginBottom: 4 }}>Home Address</p>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', marginBottom: 12 }}>
-            <i className="fa-solid fa-location-dot" style={{ marginRight: 4, color: 'var(--theme-color)' }}></i>
-            In a live environment, this field uses Google Places autocomplete.
-          </p>
         </div>
 
-        <Field label="Street Address" field="addressLine1" required value={form.addressLine1} error={errors.addressLine1} onChange={set} />
+        {/* Street address with Google Places autocomplete */}
+        <div style={{ gridColumn: 'span 2' }}>
+          <label className="vll-label" htmlFor="addressLine1">
+            Street Address<span className="required">*</span>
+          </label>
+          <AddressAutocomplete
+            id="addressLine1"
+            value={form.addressLine1}
+            onChange={v => set('addressLine1', v)}
+            onPlaceSelected={place => {
+              setForm(f => ({
+                ...f,
+                addressLine1: place.addressLine1,
+                city: place.city,
+                state: place.state,
+                zipCode: place.zipCode,
+                placeId: place.placeId,
+              }))
+              setErrors(e => ({ ...e, addressLine1: '', city: '', zipCode: '' }))
+            }}
+            error={!!errors.addressLine1}
+            aria-describedby={errors.addressLine1 ? 'addressLine1-err' : undefined}
+          />
+          {errors.addressLine1 && (
+            <p id="addressLine1-err" className="field-error" role="alert">{errors.addressLine1}</p>
+          )}
+        </div>
 
         <div style={{ gridColumn: 'span 2' }}>
           <label className="vll-label" htmlFor="addressLine2">Apt / Suite / Unit</label>

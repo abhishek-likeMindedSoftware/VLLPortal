@@ -5,6 +5,7 @@ import WizardNav from '@/components/shared/WizardNav'
 import { saveStep2 } from '@/services/applicationService'
 import { lookupVin } from '@/services/vinService'
 import { toast } from 'react-toastify'
+import AddressAutocomplete from '@/components/shared/AddressAutocomplete'
 
 interface VinResult { year: number; make: string; model: string; trim: string }
 
@@ -208,8 +209,19 @@ export default function Step2VehicleInfo() {
             <input type="text" value={dealerName} onChange={e => setDealerName(e.target.value)} className="vll-input" placeholder="ABC Motors" />
           </div>
           <div style={{ gridColumn: 'span 2' }}>
-            <label className="vll-label">Street Address<span className="required">*</span></label>
-            <input type="text" value={dealerAddress} onChange={e => setDealerAddress(e.target.value)} className="vll-input" placeholder="123 Main St" />
+            <label className="vll-label" htmlFor="dealerAddress">Street Address<span className="required">*</span></label>
+            <AddressAutocomplete
+              id="dealerAddress"
+              value={dealerAddress}
+              onChange={setDealerAddress}
+              onPlaceSelected={place => {
+                setDealerAddress(place.addressLine1)
+                setDealerCity(place.city)
+                setDealerState(place.state)
+                setDealerZip(place.zipCode)
+              }}
+              placeholder="Start typing dealer address…"
+            />
           </div>
           <div>
             <label className="vll-label">City<span className="required">*</span></label>
