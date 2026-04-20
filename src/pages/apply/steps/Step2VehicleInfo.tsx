@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
-import { saveStep2 } from '@/services/applicationService'
 import { lookupVin } from '@/services/vinService'
+import { saveStep2 } from '@/services/applicationService'
 import { toast } from 'react-toastify'
 import AddressAutocomplete from '@/components/shared/AddressAutocomplete'
 
@@ -13,6 +13,7 @@ export default function Step2VehicleInfo() {
   const { applicationId } = useParams()
   const navigate = useNavigate()
   const { markStepComplete } = useWizard()
+  const [loading, setLoading] = useState(false)
 
   const [vin, setVin] = useState('')
   const [vinResult, setVinResult] = useState<VinResult | null>(null)
@@ -32,7 +33,6 @@ export default function Step2VehicleInfo() {
   const [dealerZip, setDealerZip] = useState('')
   const [manufacturerName, setManufacturerName] = useState('')
   const [warrantyType, setWarrantyType] = useState('MANUFACTURERS_WARRANTY')
-  const [loading, setLoading] = useState(false)
 
   const handleVinBlur = async () => {
     if (vin.length !== 17) return
@@ -84,8 +84,6 @@ export default function Step2VehicleInfo() {
         dealerCity,
         dealerState,
         dealerZip,
-        dealerPhone: undefined,
-        dealerEmail: undefined,
         manufacturerName,
         warrantyType,
       })

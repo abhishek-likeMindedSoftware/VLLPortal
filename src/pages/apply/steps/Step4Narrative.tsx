@@ -12,12 +12,12 @@ export default function Step4Narrative() {
   const { applicationId } = useParams()
   const navigate = useNavigate()
   const { markStepComplete } = useWizard()
+  const [loading, setLoading] = useState(false)
   const [narrative, setNarrative] = useState('')
   const [priorDealer, setPriorDealer] = useState(false)
   const [priorMfr, setPriorMfr] = useState(false)
   const [priorNotes, setPriorNotes] = useState('')
   const [desiredResolution, setDesiredResolution] = useState('REFUND')
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
   const handleNext = async () => {

@@ -4,6 +4,7 @@ import { useWizard } from '@/context/WizardContext'
 import type { ApplicationType } from '@/context/WizardContext'
 import { APPLICATION_TYPE_LABELS } from '@/constants/appConstants'
 import { saveSession } from '@/utils/storage'
+import { createApplication } from '@/services/applicationService'
 import { toast } from 'react-toastify'
 
 const TYPE_DESCRIPTIONS: Record<ApplicationType, string> = {
@@ -29,16 +30,18 @@ export default function SelectType() {
     if (!selected || !acknowledged) return
     setLoading(true)
     try {
-      // Simulated — no real API call needed for demo
-      await new Promise(r => setTimeout(r, 600))
-      const fakeId = crypto.randomUUID()
-      const fakeCaseNumber = `LL-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 99999)).padStart(5, '0')}`
-      const fakeToken = crypto.randomUUID()
+      // Call real API — creates the application record in DB
+      const res = await createApplication(selected)
+      if (!res.success) {
+        toast.error(res.message || 'Failed to start application.')
+        return
+      }
+      const { applicationId, caseNumber, accessToken } = res.data
       setApplicationType(selected)
-      setApplicationId(fakeId)
-      setCaseNumber(fakeCaseNumber)
-      saveSession(fakeId, fakeToken)
-      navigate(`/apply/${fakeId}/step/1`)
+      setApplicationId(applicationId)
+      setCaseNumber(caseNumber)
+      saveSession(applicationId, accessToken)
+      navigate(`/apply/${applicationId}/step/1`)
     } catch {
       toast.error('Unable to start application. Please try again.')
     } finally {

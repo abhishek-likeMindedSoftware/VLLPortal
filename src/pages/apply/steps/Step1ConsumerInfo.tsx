@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
-import { saveStep1 } from '@/services/applicationService'
-import { toast } from 'react-toastify'
 import AddressAutocomplete from '@/components/shared/AddressAutocomplete'
+import { saveStep1 } from '@/services/applicationService'
+import type { Step1Data } from '@/context/WizardContext'
+import { toast } from 'react-toastify'
 
 interface ConsumerForm {
   firstName: string; lastName: string; middleName: string
@@ -26,15 +27,10 @@ const INITIAL: ConsumerForm = {
   preferredContactMethod: 'EMAIL',
 }
 
-// ── Defined OUTSIDE the parent component so React doesn't remount on every render ──
+// Field component defined OUTSIDE to prevent remount on every render
 interface FieldProps {
-  label: string
-  field: keyof ConsumerForm
-  required?: boolean
-  type?: string
-  half?: boolean
-  value: string
-  error?: string
+  label: string; field: keyof ConsumerForm; required?: boolean
+  type?: string; half?: boolean; value: string; error?: string
   onChange: (field: keyof ConsumerForm, value: string) => void
 }
 
@@ -45,9 +41,7 @@ function Field({ label, field, required, type = 'text', half, value, error, onCh
         {label}{required && <span className="required">*</span>}
       </label>
       <input
-        id={field}
-        type={type}
-        value={value}
+        id={field} type={type} value={value}
         onChange={e => onChange(field, e.target.value)}
         className={`vll-input${error ? ' error' : ''}`}
         aria-describedby={error ? `${field}-err` : undefined}
@@ -61,8 +55,14 @@ function Field({ label, field, required, type = 'text', half, value, error, onCh
 export default function Step1ConsumerInfo() {
   const { applicationId } = useParams()
   const navigate = useNavigate()
-  const { markStepComplete } = useWizard()
-  const [form, setForm] = useState<ConsumerForm>(INITIAL)
+  const { markStepComplete, saveStep1: saveStep1Ctx, state } = useWizard()
+
+  // Pre-fill from context if user navigates back
+  const [form, setForm] = useState<ConsumerForm>(() =>
+    state.step1
+      ? { ...INITIAL, ...state.step1, emailConfirm: state.step1.emailAddress, middleName: state.step1.middleName ?? '', addressLine2: state.step1.addressLine2 ?? '', placeId: state.step1.placeId ?? '' }
+      : INITIAL
+  )
   const [errors, setErrors] = useState<Partial<ConsumerForm>>({})
   const [loading, setLoading] = useState(false)
 
@@ -90,7 +90,7 @@ export default function Step1ConsumerInfo() {
     if (!validate()) return
     setLoading(true)
     try {
-      const res = await saveStep1(applicationId!, {
+      const stepData: Step1Data = {
         firstName: form.firstName,
         middleName: form.middleName || undefined,
         lastName: form.lastName,
@@ -104,11 +104,13 @@ export default function Step1ConsumerInfo() {
         zipCode: form.zipCode,
         placeId: form.placeId || undefined,
         preferredContactMethod: form.preferredContactMethod,
-      })
+      }
+      const res = await saveStep1(applicationId!, stepData)
       if (!res.success) {
         toast.error(res.message || 'Failed to save. Please try again.')
         return
       }
+      saveStep1Ctx(stepData)
       markStepComplete(1)
       navigate(`/apply/${applicationId}/step/2`)
     } catch {
@@ -159,32 +161,19 @@ export default function Step1ConsumerInfo() {
           <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--dark-color)', marginBottom: 4 }}>Home Address</p>
         </div>
 
-        {/* Street address with Google Places autocomplete */}
         <div style={{ gridColumn: 'span 2' }}>
-          <label className="vll-label" htmlFor="addressLine1">
-            Street Address<span className="required">*</span>
-          </label>
+          <label className="vll-label" htmlFor="addressLine1">Street Address<span className="required">*</span></label>
           <AddressAutocomplete
             id="addressLine1"
             value={form.addressLine1}
             onChange={v => set('addressLine1', v)}
             onPlaceSelected={place => {
-              setForm(f => ({
-                ...f,
-                addressLine1: place.addressLine1,
-                city: place.city,
-                state: place.state,
-                zipCode: place.zipCode,
-                placeId: place.placeId,
-              }))
+              setForm(f => ({ ...f, addressLine1: place.addressLine1, city: place.city, state: place.state, zipCode: place.zipCode, placeId: place.placeId }))
               setErrors(e => ({ ...e, addressLine1: '', city: '', zipCode: '' }))
             }}
             error={!!errors.addressLine1}
-            aria-describedby={errors.addressLine1 ? 'addressLine1-err' : undefined}
           />
-          {errors.addressLine1 && (
-            <p id="addressLine1-err" className="field-error" role="alert">{errors.addressLine1}</p>
-          )}
+          {errors.addressLine1 && <p className="field-error" role="alert">{errors.addressLine1}</p>}
         </div>
 
         <div style={{ gridColumn: 'span 2' }}>

@@ -4,6 +4,7 @@ import { useWizard } from '@/context/WizardContext'
 import { APPLICATION_TYPE_LABELS } from '@/constants/appConstants'
 import WizardNav from '@/components/shared/WizardNav'
 import { submitApplication } from '@/services/applicationService'
+import { toast } from 'react-toastify'
 
 export default function Step6ReviewSubmit() {
   const { applicationId } = useParams()
@@ -41,16 +42,25 @@ export default function Step6ReviewSubmit() {
   const handleSubmit = async () => {
     if (!codeVerified || !certAccepted || !signatureName.trim()) return
     setLoading(true)
-    await new Promise(r => setTimeout(r, 1200))
-    // Pass emailVerificationCode as required by manager's Step6SubmitDto
-    await submitApplication(applicationId!, {
-      emailVerificationCode: verificationCode,
-      certificationAccepted: certAccepted,
-      signatureFullName: signatureName,
-    }).catch(() => {}) // demo — ignore API errors
-    markStepComplete(6)
-    setLoading(false)
-    setSubmitted(true)
+    try {
+      const res = await submitApplication(applicationId!, {
+        emailVerificationCode: verificationCode,
+        certificationAccepted: certAccepted,
+        signatureFullName: signatureName,
+      })
+
+      if (!res.success) {
+        toast.error(res.message || 'Submission failed. Please try again.')
+        return
+      }
+
+      markStepComplete(6)
+      setSubmitted(true)
+    } catch {
+      toast.error('Submission failed. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (submitted) {

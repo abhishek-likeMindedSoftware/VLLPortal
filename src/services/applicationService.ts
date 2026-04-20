@@ -1,7 +1,9 @@
 import client from '@/api/axiosInstance'
 import { API } from '@/constants/apiEndpoints'
+import type { Step1Data, Step2Data, Step3Data, Step4Data } from '@/context/WizardContext'
 
-// ── Create application ────────────────────────────────────────────────────────
+// ── Create application (SelectType) ──────────────────────────────────────────
+// Spec: POST /api/applications — creates record, returns applicationId + token
 export const createApplication = async (applicationType: string) => {
   const res = await client.post(API.APPLICATIONS, {
     applicationType,
@@ -11,65 +13,35 @@ export const createApplication = async (applicationType: string) => {
 }
 
 // ── Step 1 — Consumer Info ────────────────────────────────────────────────────
-export const saveStep1 = async (applicationId: string, data: {
-  firstName: string; middleName?: string; lastName: string
-  emailAddress: string; phoneNumber: string; phoneType: string
-  addressLine1: string; addressLine2?: string
-  city: string; state: string; zipCode: string
-  placeId?: string; preferredContactMethod: string
-}) => {
+// Spec: PUT /api/applications/{id}/step/1
+export const saveStep1 = async (applicationId: string, data: Step1Data) => {
   const res = await client.put(API.APPLICATION_STEP(applicationId, 1), data)
   return res.data
 }
 
 // ── Step 2 — Vehicle Info ─────────────────────────────────────────────────────
-export const saveStep2 = async (applicationId: string, data: {
-  vIN: string; vinConfirmed: boolean
-  vehicleYear: number; vehicleMake: string; vehicleModel: string
-  vehicleColor?: string; licensePlate?: string; licensePlateState?: string
-  purchaseDate: string; purchasePrice?: number
-  mileageAtPurchase: number; currentMileage: number
-  dealerName: string; dealerAddressLine1: string; dealerAddressLine2?: string
-  dealerCity: string; dealerState: string; dealerZip: string
-  dealerPhone?: string; dealerEmail?: string; dealerPlaceId?: string
-  manufacturerName: string; warrantyType: string
-  warrantyStartDate?: string; warrantyExpiryDate?: string
-}) => {
+// Spec: PUT /api/applications/{id}/step/2
+export const saveStep2 = async (applicationId: string, data: Step2Data) => {
   const res = await client.put(API.APPLICATION_STEP(applicationId, 2), data)
   return res.data
 }
 
 // ── Step 3 — Defects & Repairs ────────────────────────────────────────────────
-export const saveStep3 = async (applicationId: string, data: {
-  defects: Array<{
-    defectDescription: string; defectCategory: string
-    firstOccurrenceDate: string; isOngoing: boolean; sortOrder: number
-  }>
-  repairAttempts: Array<{
-    repairDate: string; repairFacilityName: string
-    defectsAddressed: string; repairSuccessful: boolean
-    daysOutOfService?: number; sortOrder: number
-  }>
-  expenses: Array<{
-    expenseType: string; amount: number
-    expenseDate?: string; description?: string
-  }>
-}) => {
+// Spec: PUT /api/applications/{id}/step/3
+export const saveStep3 = async (applicationId: string, data: Step3Data) => {
   const res = await client.put(API.APPLICATION_STEP(applicationId, 3), data)
   return res.data
 }
 
 // ── Step 4 — Narrative ────────────────────────────────────────────────────────
-export const saveStep4 = async (applicationId: string, data: {
-  narrativeStatement: string
-  priorContactWithDealer: boolean; priorContactWithMfr: boolean
-  priorContactNotes?: string; desiredResolution: string
-}) => {
+// Spec: PUT /api/applications/{id}/step/4
+export const saveStep4 = async (applicationId: string, data: Step4Data) => {
   const res = await client.put(API.APPLICATION_STEP(applicationId, 4), data)
   return res.data
 }
 
-// ── Submit ────────────────────────────────────────────────────────────────────
+// ── Step 6 — Final submission ─────────────────────────────────────────────────
+// Spec: POST /api/applications/{id}/submit
 export const submitApplication = async (applicationId: string, data: {
   emailVerificationCode: string
   certificationAccepted: boolean

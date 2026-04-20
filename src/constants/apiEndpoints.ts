@@ -5,6 +5,7 @@ export const API = {
   APPLICATIONS: `${BASE}/applications`,
   APPLICATION_STEP: (id: string, step: number) => `${BASE}/applications/${id}/step/${step}`,
   APPLICATION_SUBMIT: (id: string) => `${BASE}/applications/${id}/submit`,
+  APPLICATION_SUBMIT_FULL: (id: string) => `${BASE}/applications/${id}/submit-full`,
   APPLICATION_DOCUMENTS: (id: string) => `${BASE}/applications/${id}/documents`,
   APPLICATION_DOCUMENT: (id: string, docId: string) => `${BASE}/applications/${id}/documents/${docId}`,
   VERIFICATION_SEND: `${BASE}/verification/send-code`,

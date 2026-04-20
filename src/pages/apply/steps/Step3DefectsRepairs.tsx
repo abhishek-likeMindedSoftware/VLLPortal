@@ -19,9 +19,9 @@ export default function Step3DefectsRepairs() {
   const { applicationId } = useParams()
   const navigate = useNavigate()
   const { markStepComplete } = useWizard()
+  const [loading, setLoading] = useState(false)
   const [defects, setDefects] = useState<Defect[]>([{ id: '1', description: '', category: 'ENGINE', firstOccurrence: '', isOngoing: true }])
   const [repairs, setRepairs] = useState<Repair[]>([{ id: '1', repairDate: '', facilityName: '', defectsAddressed: '', repairSuccessful: false, daysOutOfService: '' }])
-  const [loading, setLoading] = useState(false)
 
   const addDefect = () => setDefects(d => [...d, { id: Date.now().toString(), description: '', category: 'ENGINE', firstOccurrence: '', isOngoing: true }])
   const removeDefect = (id: string) => setDefects(d => d.filter(x => x.id !== id))
