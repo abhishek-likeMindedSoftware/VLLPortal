@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
+import { saveStep3 } from '@/services/applicationService'
+import { toast } from 'react-toastify'
 
 interface Defect { id: string; description: string; category: string; firstOccurrence: string; isOngoing: boolean }
 interface Repair { id: string; repairDate: string; facilityName: string; defectsAddressed: string; repairSuccessful: boolean; daysOutOfService: string }
@@ -33,10 +35,36 @@ export default function Step3DefectsRepairs() {
 
   const handleNext = async () => {
     setLoading(true)
-    await new Promise(r => setTimeout(r, 400))
-    markStepComplete(3)
-    setLoading(false)
-    navigate(`/apply/${applicationId}/step/4`)
+    try {
+      const res = await saveStep3(applicationId!, {
+        defects: defects.map((d, i) => ({
+          defectDescription: d.description,
+          defectCategory: d.category,
+          firstOccurrenceDate: d.firstOccurrence || new Date().toISOString().split('T')[0],
+          isOngoing: d.isOngoing,
+          sortOrder: i + 1,
+        })),
+        repairAttempts: repairs.map((r, i) => ({
+          repairDate: r.repairDate || new Date().toISOString().split('T')[0],
+          repairFacilityName: r.facilityName,
+          defectsAddressed: r.defectsAddressed,
+          repairSuccessful: r.repairSuccessful,
+          daysOutOfService: r.daysOutOfService ? parseInt(r.daysOutOfService) : undefined,
+          sortOrder: i + 1,
+        })),
+        expenses: [],
+      })
+      if (!res.success) {
+        toast.error(res.message || 'Failed to save.')
+        return
+      }
+      markStepComplete(3)
+      navigate(`/apply/${applicationId}/step/4`)
+    } catch {
+      toast.error('Unable to save. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

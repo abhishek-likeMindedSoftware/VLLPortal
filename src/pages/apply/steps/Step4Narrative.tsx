@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
+import { saveStep4 } from '@/services/applicationService'
+import { toast } from 'react-toastify'
 
 const MAX = 5000
 const MIN = 50
@@ -25,10 +27,25 @@ export default function Step4Narrative() {
     }
     setError('')
     setLoading(true)
-    await new Promise(r => setTimeout(r, 400))
-    markStepComplete(4)
-    setLoading(false)
-    navigate(`/apply/${applicationId}/step/5`)
+    try {
+      const res = await saveStep4(applicationId!, {
+        narrativeStatement: narrative,
+        priorContactWithDealer: priorDealer,
+        priorContactWithMfr: priorMfr,
+        priorContactNotes: priorNotes || undefined,
+        desiredResolution: desiredResolution,
+      })
+      if (!res.success) {
+        toast.error(res.message || 'Failed to save.')
+        return
+      }
+      markStepComplete(4)
+      navigate(`/apply/${applicationId}/step/5`)
+    } catch {
+      toast.error('Unable to save. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const charColor = narrative.length < MIN ? '#dc3545' : narrative.length > MAX * 0.9 ? '#f59e0b' : 'var(--mass-primary-green)'

@@ -23,7 +23,7 @@ export default function WizardShell() {
   const StepComponent = STEP_COMPONENTS[currentStep]
 
   return (
-    <div style={{ maxWidth: 800 }}>
+    <div style={{ maxWidth: 800, width: '100%' }}>
       {/* Application type + case number */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
         {state.applicationType && (
@@ -40,7 +40,7 @@ export default function WizardShell() {
       </div>
 
       {/* Progress steps */}
-      <nav aria-label="Application progress" style={{ marginBottom: 36 }}>
+      <nav aria-label="Application progress" style={{ marginBottom: 36, width: '100%' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
           {Object.entries(WIZARD_STEP_LABELS).map(([s, label]) => {
             const stepNum = parseInt(s)

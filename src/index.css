@@ -46,10 +46,23 @@ body {
 a { color: var(--theme-color); }
 
 /* ── Focus (WCAG 2.1 AA) ─────────────────────────────────────────────────── */
+/* Remove all default outlines — we apply them selectively below */
 *:focus { outline: none; }
+*:focus:not(:focus-visible) { outline: none !important; }
+
+/* Keyboard navigation only — black outline on interactive elements */
 *:focus-visible {
   outline: 2px solid #000 !important;
   outline-offset: 2px !important;
+}
+
+/* Inputs/selects/textareas: blue ring on focus (mouse OR keyboard), no black outline */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: none !important;
+  border-color: var(--portal-blue) !important;
+  box-shadow: 0 0 0 3px rgba(10,95,168,0.15) !important;
 }
 
 /* ── Skip link ───────────────────────────────────────────────────────────── */

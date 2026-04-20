@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
+import { saveStep1 } from '@/services/applicationService'
+import { toast } from 'react-toastify'
 
 interface ConsumerForm {
   firstName: string; lastName: string; middleName: string
@@ -19,6 +21,38 @@ const INITIAL: ConsumerForm = {
   addressLine1: '', addressLine2: '',
   city: '', state: 'MA', zipCode: '',
   preferredContactMethod: 'EMAIL',
+}
+
+// ── Defined OUTSIDE the parent component so React doesn't remount on every render ──
+interface FieldProps {
+  label: string
+  field: keyof ConsumerForm
+  required?: boolean
+  type?: string
+  half?: boolean
+  value: string
+  error?: string
+  onChange: (field: keyof ConsumerForm, value: string) => void
+}
+
+function Field({ label, field, required, type = 'text', half, value, error, onChange }: FieldProps) {
+  return (
+    <div style={{ gridColumn: half ? 'span 1' : 'span 2' }}>
+      <label className="vll-label" htmlFor={field}>
+        {label}{required && <span className="required">*</span>}
+      </label>
+      <input
+        id={field}
+        type={type}
+        value={value}
+        onChange={e => onChange(field, e.target.value)}
+        className={`vll-input${error ? ' error' : ''}`}
+        aria-describedby={error ? `${field}-err` : undefined}
+        aria-required={required}
+      />
+      {error && <p id={`${field}-err`} className="field-error" role="alert">{error}</p>}
+    </div>
+  )
 }
 
 export default function Step1ConsumerInfo() {
@@ -52,27 +86,33 @@ export default function Step1ConsumerInfo() {
   const handleNext = async () => {
     if (!validate()) return
     setLoading(true)
-    await new Promise(r => setTimeout(r, 400)) // simulate save
-    markStepComplete(1)
-    setLoading(false)
-    navigate(`/apply/${applicationId}/step/2`)
+    try {
+      const res = await saveStep1(applicationId!, {
+        firstName: form.firstName,
+        middleName: form.middleName || undefined,
+        lastName: form.lastName,
+        emailAddress: form.emailAddress,
+        phoneNumber: form.phoneNumber,
+        phoneType: form.phoneType,
+        addressLine1: form.addressLine1,
+        addressLine2: form.addressLine2 || undefined,
+        city: form.city,
+        state: form.state,
+        zipCode: form.zipCode,
+        preferredContactMethod: form.preferredContactMethod,
+      })
+      if (!res.success) {
+        toast.error(res.message || 'Failed to save. Please try again.')
+        return
+      }
+      markStepComplete(1)
+      navigate(`/apply/${applicationId}/step/2`)
+    } catch {
+      toast.error('Unable to save. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
   }
-
-  const F = ({ label, field, required, type = 'text', half }: { label: string; field: keyof ConsumerForm; required?: boolean; type?: string; half?: boolean }) => (
-    <div style={{ gridColumn: half ? 'span 1' : 'span 2' }}>
-      <label className="vll-label" htmlFor={field}>
-        {label}{required && <span className="required">*</span>}
-      </label>
-      <input
-        id={field} type={type} value={form[field]}
-        onChange={e => set(field, e.target.value)}
-        className={`vll-input${errors[field] ? ' error' : ''}`}
-        aria-describedby={errors[field] ? `${field}-err` : undefined}
-        aria-required={required}
-      />
-      {errors[field] && <p id={`${field}-err`} className="field-error" role="alert">{errors[field]}</p>}
-    </div>
-  )
 
   return (
     <div>
@@ -86,14 +126,17 @@ export default function Step1ConsumerInfo() {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px 20px' }}>
-        <F label="First Name" field="firstName" required half />
-        <F label="Last Name" field="lastName" required half />
+        <Field label="First Name" field="firstName" required half value={form.firstName} error={errors.firstName} onChange={set} />
+        <Field label="Last Name" field="lastName" required half value={form.lastName} error={errors.lastName} onChange={set} />
+
         <div style={{ gridColumn: 'span 2' }}>
           <label className="vll-label" htmlFor="middleName">Middle Name / Initial</label>
           <input id="middleName" type="text" value={form.middleName} onChange={e => set('middleName', e.target.value)} className="vll-input" style={{ maxWidth: 240 }} />
         </div>
-        <F label="Email Address" field="emailAddress" required type="email" />
-        <F label="Confirm Email" field="emailConfirm" required type="email" />
+
+        <Field label="Email Address" field="emailAddress" required type="email" value={form.emailAddress} error={errors.emailAddress} onChange={set} />
+        <Field label="Confirm Email" field="emailConfirm" required type="email" value={form.emailConfirm} error={errors.emailConfirm} onChange={set} />
+
         <div style={{ gridColumn: 'span 1' }}>
           <label className="vll-label" htmlFor="phoneNumber">Phone Number<span className="required">*</span></label>
           <input id="phoneNumber" type="tel" value={form.phoneNumber} onChange={e => set('phoneNumber', e.target.value)} className={`vll-input${errors.phoneNumber ? ' error' : ''}`} placeholder="(617) 555-0100" />
@@ -115,12 +158,16 @@ export default function Step1ConsumerInfo() {
             In a live environment, this field uses Google Places autocomplete.
           </p>
         </div>
-        <F label="Street Address" field="addressLine1" required />
+
+        <Field label="Street Address" field="addressLine1" required value={form.addressLine1} error={errors.addressLine1} onChange={set} />
+
         <div style={{ gridColumn: 'span 2' }}>
           <label className="vll-label" htmlFor="addressLine2">Apt / Suite / Unit</label>
           <input id="addressLine2" type="text" value={form.addressLine2} onChange={e => set('addressLine2', e.target.value)} className="vll-input" style={{ maxWidth: 300 }} />
         </div>
-        <F label="City" field="city" required half />
+
+        <Field label="City" field="city" required half value={form.city} error={errors.city} onChange={set} />
+
         <div style={{ gridColumn: 'span 1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
           <div>
             <label className="vll-label" htmlFor="state">State<span className="required">*</span></label>

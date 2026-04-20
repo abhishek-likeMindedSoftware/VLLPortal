@@ -2,15 +2,11 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
+import { saveStep2 } from '@/services/applicationService'
+import { lookupVin } from '@/services/vinService'
+import { toast } from 'react-toastify'
 
 interface VinResult { year: number; make: string; model: string; trim: string }
-
-// Simulated VIN decode — no external API needed for demo
-const MOCK_VINS: Record<string, VinResult> = {
-  '1HGBH41JXMN109186': { year: 2021, make: 'Honda', model: 'Civic', trim: 'EX' },
-  '2T1BURHE0JC043821': { year: 2018, make: 'Toyota', model: 'Corolla', trim: 'LE' },
-  '1FTFW1ET5DFC10312': { year: 2013, make: 'Ford', model: 'F-150', trim: 'XLT' },
-}
 
 export default function Step2VehicleInfo() {
   const { applicationId } = useParams()
@@ -41,24 +37,68 @@ export default function Step2VehicleInfo() {
     if (vin.length !== 17) return
     setVinStatus('loading')
     setVinConfirmed(false)
-    await new Promise(r => setTimeout(r, 800))
-    const result = MOCK_VINS[vin.toUpperCase()] ?? {
-      year: 2020, make: 'Unknown', model: 'Vehicle', trim: 'Standard'
+    try {
+      const result = await lookupVin(vin)
+      if (result && result.isValid) {
+        setVinResult({ year: result.year ?? 2020, make: result.make ?? '', model: result.model ?? '', trim: result.trim ?? '' })
+        setVehicleYear(String(result.year ?? ''))
+        setVehicleMake(result.make ?? '')
+        setVehicleModel(result.model ?? '')
+        setManufacturerName(result.make ?? '')
+        if (result.isDuplicate) {
+          toast.warning(`A duplicate application exists for this VIN: ${result.duplicateCaseNumbers.join(', ')}`)
+        }
+        setVinStatus('valid')
+      } else {
+        setVinStatus('invalid')
+        toast.error('This VIN could not be decoded. Please verify the number and try again.')
+      }
+    } catch {
+      // Fallback to static decode for demo
+      const fallback = { year: 2020, make: 'Unknown', model: 'Vehicle', trim: 'Standard' }
+      setVinResult(fallback)
+      setVehicleYear(String(fallback.year))
+      setVehicleMake(fallback.make)
+      setVehicleModel(fallback.model)
+      setManufacturerName(fallback.make)
+      setVinStatus('valid')
     }
-    setVinResult(result)
-    setVehicleYear(String(result.year))
-    setVehicleMake(result.make)
-    setVehicleModel(result.model)
-    setManufacturerName(result.make)
-    setVinStatus('valid')
   }
 
   const handleNext = async () => {
     setLoading(true)
-    await new Promise(r => setTimeout(r, 400))
-    markStepComplete(2)
-    setLoading(false)
-    navigate(`/apply/${applicationId}/step/3`)
+    try {
+      const res = await saveStep2(applicationId!, {
+        vIN: vin,
+        vinConfirmed,
+        vehicleYear: parseInt(vehicleYear) || 2020,
+        vehicleMake,
+        vehicleModel,
+        vehicleColor: vehicleColor || undefined,
+        mileageAtPurchase: parseInt(mileageAtPurchase) || 0,
+        currentMileage: parseInt(currentMileage) || 0,
+        purchaseDate: purchaseDate || new Date().toISOString().split('T')[0],
+        dealerName,
+        dealerAddressLine1: dealerAddress,
+        dealerCity,
+        dealerState,
+        dealerZip,
+        dealerPhone: undefined,
+        dealerEmail: undefined,
+        manufacturerName,
+        warrantyType,
+      })
+      if (!res.success) {
+        toast.error(res.message || 'Failed to save vehicle info.')
+        return
+      }
+      markStepComplete(2)
+      navigate(`/apply/${applicationId}/step/3`)
+    } catch {
+      toast.error('Unable to save. Please check your connection.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
