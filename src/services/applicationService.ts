@@ -52,7 +52,9 @@ export const submitApplication = async (applicationId: string, data: {
 }
 
 // ── Portal status ─────────────────────────────────────────────────────────────
-export const getPortalStatus = async (applicationId: string) => {
-  const res = await client.get(API.PORTAL_STATUS, { params: { applicationId } })
+export const getPortalStatus = async (applicationId: string, token?: string) => {
+  const params: Record<string, string> = { applicationId }
+  if (token) params.token = token
+  const res = await client.get(API.PORTAL_STATUS, { params })
   return res.data
 }

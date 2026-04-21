@@ -1,39 +1,81 @@
-import { useState } from 'react'
-import { getSession } from '@/utils/storage'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { getSession, saveSession } from '@/utils/storage'
+import { getPortalStatus } from '@/services/applicationService'
 
 const MILESTONES = [
-  { key: 'SUBMITTED', label: 'Submitted', icon: 'fa-paper-plane' },
-  { key: 'ACCEPTED', label: 'Accepted', icon: 'fa-check-circle' },
+  { key: 'SUBMITTED',        label: 'Submitted',        icon: 'fa-paper-plane' },
+  { key: 'ACCEPTED',         label: 'Accepted',         icon: 'fa-check-circle' },
   { key: 'DEALER_RESPONDED', label: 'Dealer Responded', icon: 'fa-reply' },
-  { key: 'HEARING_SCHEDULED', label: 'Hearing Scheduled', icon: 'fa-calendar' },
-  { key: 'DECISION_ISSUED', label: 'Decision Issued', icon: 'fa-gavel' },
+  { key: 'HEARING_SCHEDULED',label: 'Hearing Scheduled',icon: 'fa-calendar' },
+  { key: 'DECISION_ISSUED',  label: 'Decision Issued',  icon: 'fa-gavel' },
 ]
 
-// Demo simulated status
-const DEMO_STATUS = {
-  caseNumber: 'LL-2026-00142',
-  status: 'ACCEPTED',
-  applicationType: 'New Car Lemon Law',
-  submittedAt: 'April 10, 2026',
-  lastActivity: 'April 14, 2026',
-  notifications: [
-    { date: 'Apr 14', message: 'Your application has been accepted. Dealer outreach has been initiated.' },
-    { date: 'Apr 10', message: 'Application received. Case number LL-2026-00142 assigned.' },
-  ]
+const STATUS_LABELS: Record<string, string> = {
+  SUBMITTED:         'Submitted',
+  INCOMPLETE:        'Incomplete — Action Required',
+  ACCEPTED:          'Accepted',
+  DEALER_RESPONDED:  'Dealer Responded',
+  HEARING_SCHEDULED: 'Hearing Scheduled',
+  HEARING_COMPLETE:  'Hearing Complete',
+  DECISION_ISSUED:   'Decision Issued',
+  WITHDRAWN:         'Withdrawn',
+  CLOSED:            'Closed',
+}
+
+interface PortalStatus {
+  applicationId: string
+  caseNumber: string
+  status: string
+  applicationTypeFriendly?: string
+  submittedAt: string
+  milestones?: Array<{ key: string; label: string; completedAt?: string }>
 }
 
 export default function Status() {
-  const { applicationId } = getSession()
-  const [lookupId, setLookupId] = useState(applicationId ?? '')
-  const [status, setStatus] = useState<typeof DEMO_STATUS | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [searchParams] = useSearchParams()
+  const session = getSession()
 
-  const handleLookup = async () => {
-    if (!lookupId.trim()) return
+  // Token link from email: /status?applicationId=<guid>&token=<cleartext>
+  const urlApplicationId = searchParams.get('applicationId')
+  const urlToken         = searchParams.get('token')
+
+  const [lookupId, setLookupId] = useState(urlApplicationId ?? session.applicationId ?? '')
+  const [status, setStatus]     = useState<PortalStatus | null>(null)
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState<string | null>(null)
+
+  const fetchStatus = async (appId: string, token?: string | null) => {
     setLoading(true)
-    await new Promise(r => setTimeout(r, 800))
-    setStatus(DEMO_STATUS)
-    setLoading(false)
+    setError(null)
+    try {
+      // If a token came from the URL, persist it so subsequent API calls use it
+      if (token) saveSession(appId, token)
+
+      const res = await getPortalStatus(appId, token ?? undefined)
+      if (res.success) {
+        setStatus(res.data)
+      } else {
+        setError(res.message ?? 'Unable to retrieve application status.')
+      }
+    } catch {
+      setError('Unable to connect. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Auto-fetch when arriving via email link
+  useEffect(() => {
+    if (urlApplicationId) {
+      fetchStatus(urlApplicationId, urlToken)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleLookup = () => {
+    if (!lookupId.trim()) return
+    fetchStatus(lookupId.trim(), session.token ?? undefined)
   }
 
   const currentIdx = MILESTONES.findIndex(m => m.key === status?.status)
@@ -45,35 +87,69 @@ export default function Status() {
           Application Status
         </h1>
         <p style={{ fontSize: 'var(--text-base)', color: 'var(--ms-gray-dark)' }}>
-          Enter your Application ID or use the secure link from your confirmation email.
+          Use the secure link from your confirmation email, or enter your Application ID below.
         </p>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, marginBottom: 32, maxWidth: 480 }}>
-        <input
-          type="text" value={lookupId}
-          onChange={e => setLookupId(e.target.value)}
-          className="vll-input"
-          placeholder="Application ID or case number"
-          style={{ flex: 1 }}
-        />
-        <button onClick={handleLookup} disabled={loading} className="btn-theme" style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-          {loading ? <><i className="fa-solid fa-spinner fa-spin"></i></> : <><i className="fa-solid fa-magnifying-glass"></i> Look Up</>}
-        </button>
-      </div>
+      {/* Manual lookup — hidden if we already loaded via URL token */}
+      {!status && (
+        <div style={{ display: 'flex', gap: 12, marginBottom: 32, maxWidth: 480 }}>
+          <input
+            type="text"
+            value={lookupId}
+            onChange={e => setLookupId(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleLookup()}
+            className="vll-input"
+            placeholder="Application ID (paste from email)"
+            style={{ flex: 1 }}
+            aria-label="Application ID"
+          />
+          <button
+            onClick={handleLookup}
+            disabled={loading}
+            className="btn-theme"
+            style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          >
+            {loading
+              ? <i className="fa-solid fa-spinner fa-spin"></i>
+              : <><i className="fa-solid fa-magnifying-glass"></i> Look Up</>}
+          </button>
+        </div>
+      )}
 
-      {status && (
+      {loading && (
+        <div style={{ textAlign: 'center', padding: 48, color: 'var(--ms-gray-dark)' }}>
+          <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 28, marginBottom: 12 }}></i>
+          <p>Loading your application status…</p>
+        </div>
+      )}
+
+      {error && !loading && (
+        <div style={{ background: '#fee2e2', border: '1px solid #fca5a5', borderRadius: 8, padding: '16px 20px', color: '#991b1b', marginBottom: 24 }}>
+          <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 8 }}></i>
+          {error}
+        </div>
+      )}
+
+      {status && !loading && (
         <>
           {/* Case header */}
           <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <div>
                 <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: '0 0 4px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: 1 }}>Case Number</p>
-                <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 800, color: 'var(--theme-color)', margin: '0 0 8px' }}>{status.caseNumber}</h2>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', margin: 0 }}>{status.applicationType} · Submitted {status.submittedAt}</p>
+                <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 800, color: 'var(--theme-color)', margin: '0 0 8px' }}>
+                  {status.caseNumber}
+                </h2>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', margin: 0 }}>
+                  {status.applicationTypeFriendly} · Submitted {new Date(status.submittedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </p>
               </div>
-              <span className={`status-badge badge-${status.status.toLowerCase().replace('_', '-')}`} style={{ fontSize: 'var(--text-sm)', padding: '6px 16px' }}>
-                {status.status.replace(/_/g, ' ')}
+              <span
+                className={`status-badge badge-${status.status.toLowerCase().replace(/_/g, '-')}`}
+                style={{ fontSize: 'var(--text-sm)', padding: '6px 16px' }}
+              >
+                {STATUS_LABELS[status.status] ?? status.status.replace(/_/g, ' ')}
               </span>
             </div>
           </div>
@@ -83,7 +159,7 @@ export default function Status() {
             <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 24 }}>Progress</h3>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
               {MILESTONES.map((m, i) => {
-                const done = i <= currentIdx
+                const done    = i <= currentIdx
                 const current = i === currentIdx
                 return (
                   <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
@@ -102,22 +178,14 @@ export default function Status() {
             </div>
           </div>
 
-          {/* Notifications */}
-          <div className="vll-card" style={{ padding: 24 }}>
-            <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16 }}>Notifications</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {status.notifications.map((n, i) => (
-                <div key={i} style={{ display: 'flex', gap: 14, paddingBottom: 12, borderBottom: i < status.notifications.length - 1 ? '1px solid #f3f4f6' : 'none' }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(2,101,163,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className="fa-solid fa-bell" style={{ color: 'var(--theme-color)', fontSize: 14 }}></i>
-                  </div>
-                  <div>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: '0 0 4px', fontWeight: 600 }}>{n.date}</p>
-                    <p style={{ fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: 0, lineHeight: 1.6 }}>{n.message}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+          {/* Look up a different application */}
+          <div style={{ textAlign: 'center', marginTop: 8 }}>
+            <button
+              onClick={() => { setStatus(null); setError(null) }}
+              style={{ background: 'none', border: 'none', color: 'var(--theme-color)', fontSize: 'var(--text-sm)', cursor: 'pointer', textDecoration: 'underline' }}
+            >
+              Look up a different application
+            </button>
           </div>
         </>
       )}

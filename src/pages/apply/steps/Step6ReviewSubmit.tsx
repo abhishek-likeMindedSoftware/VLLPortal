@@ -4,6 +4,7 @@ import { useWizard } from '@/context/WizardContext'
 import { APPLICATION_TYPE_LABELS } from '@/constants/appConstants'
 import WizardNav from '@/components/shared/WizardNav'
 import { submitApplication } from '@/services/applicationService'
+import { sendVerificationCode, confirmVerificationCode } from '@/services/verificationService'
 import { toast } from 'react-toastify'
 
 export default function Step6ReviewSubmit() {
@@ -18,24 +19,46 @@ export default function Step6ReviewSubmit() {
   const [loading, setLoading] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
+  const [verifyingCode, setVerifyingCode] = useState(false)
+
+  const consumerEmail = state.step1?.emailAddress ?? ''
 
   const handleSendCode = async () => {
+    if (!consumerEmail) {
+      toast.error('No email address found. Please go back to Step 1 and enter your email.')
+      return
+    }
     setSendingCode(true)
     try {
-      const { sendVerificationCode } = await import('@/services/verificationService')
-      // Get email from session/context — for now use a placeholder
-      await sendVerificationCode('consumer@example.com')
-      setCodeSent(true)
+      const res = await sendVerificationCode(consumerEmail)
+      if (res.success) {
+        setCodeSent(true)
+        toast.success(`Verification code sent to ${consumerEmail}`)
+      } else {
+        toast.error(res.message || 'Failed to send verification code.')
+      }
     } catch {
-      setCodeSent(true) // still show input for demo
+      toast.error('Failed to send verification code. Please try again.')
     } finally {
       setSendingCode(false)
     }
   }
 
   const handleVerifyCode = async () => {
-    if (verificationCode.length >= 4) {
-      setCodeVerified(true)
+    if (!verificationCode.trim()) return
+    setVerifyingCode(true)
+    try {
+      const res = await confirmVerificationCode(consumerEmail, verificationCode.trim())
+      if (res.success && res.data?.verified) {
+        setCodeVerified(true)
+        toast.success('Email verified successfully.')
+      } else {
+        toast.error(res.message || 'Invalid or expired code. Please try again.')
+      }
+    } catch {
+      toast.error('Verification failed. Please try again.')
+    } finally {
+      setVerifyingCode(false)
     }
   }
 
@@ -125,7 +148,7 @@ export default function Step6ReviewSubmit() {
         {!codeVerified ? (
           <>
             <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', marginBottom: 16 }}>
-              We'll send a one-time verification code to your email address to confirm your identity.
+              We'll send a one-time verification code to <strong>{consumerEmail || 'your email address'}</strong> to confirm your identity.
             </p>
             {!codeSent ? (
               <button onClick={handleSendCode} disabled={sendingCode} className="btn-theme" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -134,11 +157,18 @@ export default function Step6ReviewSubmit() {
             ) : (
               <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', maxWidth: 360 }}>
                 <div style={{ flex: 1 }}>
-                  <label className="vll-label" htmlFor="code">Enter Code (demo: any 4+ digits)</label>
+                  <label className="vll-label" htmlFor="code">Enter the 6-digit code sent to your email</label>
                   <input id="code" type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} className="vll-input" placeholder="123456" maxLength={8} style={{ fontFamily: 'monospace', letterSpacing: 4, fontSize: 18 }} />
                 </div>
-                <button onClick={handleVerifyCode} className="btn-theme" style={{ flexShrink: 0, padding: '10px 20px' }}>Verify</button>
+                <button onClick={handleVerifyCode} disabled={verifyingCode || !verificationCode.trim()} className="btn-theme" style={{ flexShrink: 0, padding: '10px 20px' }}>
+                  {verifyingCode ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Verify'}
+                </button>
               </div>
+            )}
+            {codeSent && (
+              <button onClick={handleSendCode} disabled={sendingCode} style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--theme-color)', fontSize: 'var(--text-sm)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                Resend code
+              </button>
             )}
           </>
         ) : (
