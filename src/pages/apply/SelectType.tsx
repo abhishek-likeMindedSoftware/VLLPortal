@@ -40,7 +40,7 @@ export default function SelectType() {
       setApplicationType(selected)
       setApplicationId(applicationId)
       setCaseNumber(caseNumber)
-      saveSession(applicationId, accessToken)
+      saveSession(caseNumber, accessToken)
       navigate(`/apply/${applicationId}/step/1`)
     } catch {
       toast.error('Unable to start application. Please try again.')

@@ -32,3 +32,4 @@ export const WIZARD_STEP_LABELS: Record<number, string> = {
 
 export const TOKEN_STORAGE_KEY = 'vll_access_token'
 export const APPLICATION_ID_KEY = 'vll_application_id'
+export const CASE_NUMBER_KEY = 'vll_case_number'

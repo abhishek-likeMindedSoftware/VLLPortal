@@ -31,6 +31,8 @@ export default function Step2VehicleInfo() {
   const [dealerCity, setDealerCity] = useState('')
   const [dealerState, setDealerState] = useState('MA')
   const [dealerZip, setDealerZip] = useState('')
+  const [dealerPhone, setDealerPhone] = useState('')
+  const [dealerEmail, setDealerEmail] = useState('')
   const [manufacturerName, setManufacturerName] = useState('')
   const [warrantyType, setWarrantyType] = useState('MANUFACTURERS_WARRANTY')
 
@@ -84,6 +86,8 @@ export default function Step2VehicleInfo() {
         dealerCity,
         dealerState,
         dealerZip,
+        dealerPhone: dealerPhone || undefined,
+        dealerEmail: dealerEmail || undefined,
         manufacturerName,
         warrantyType,
       })
@@ -238,6 +242,32 @@ export default function Step2VehicleInfo() {
           <div style={{ gridColumn: 'span 2' }}>
             <label className="vll-label">Manufacturer Name<span className="required">*</span></label>
             <input type="text" value={manufacturerName} onChange={e => setManufacturerName(e.target.value)} className="vll-input" placeholder="Honda" />
+          </div>
+          <div>
+            <label className="vll-label">
+              Dealer Phone
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 400, color: 'var(--ms-gray-dark)', marginLeft: 6 }}>optional</span>
+            </label>
+            <input
+              type="tel"
+              value={dealerPhone}
+              onChange={e => setDealerPhone(e.target.value)}
+              className="vll-input"
+              placeholder="(617) 555-0100"
+            />
+          </div>
+          <div>
+            <label className="vll-label">
+              Dealer Email
+              <span style={{ fontSize: 'var(--text-xs)', fontWeight: 400, color: 'var(--ms-gray-dark)', marginLeft: 6 }}>optional — used to notify dealer</span>
+            </label>
+            <input
+              type="email"
+              value={dealerEmail}
+              onChange={e => setDealerEmail(e.target.value)}
+              className="vll-input"
+              placeholder="service@dealership.com"
+            />
           </div>
         </div>
       </div>
