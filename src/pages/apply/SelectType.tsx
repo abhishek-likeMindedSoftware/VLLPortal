@@ -8,9 +8,9 @@ import { createApplication } from '@/services/applicationService'
 import { toast } from 'react-toastify'
 
 const TYPE_DESCRIPTIONS: Record<ApplicationType, string> = {
-  NEW_CAR: 'Applies to new vehicles purchased or leased within the last 36 months or 36,000 miles under the manufacturer\'s original warranty.',
-  USED_CAR: 'Applies to used vehicles purchased from a dealer with an implied warranty in effect at time of sale.',
-  LEASED: 'Applies to consumers leasing a new vehicle experiencing repeated defects under the manufacturer\'s warranty.',
+  NEW_CAR: 'New vehicle purchased or leased within the last 36 months or 36,000 miles under the manufacturer\'s original warranty.',
+  USED_CAR: 'Used vehicle purchased from a dealer with an implied warranty in effect at time of sale.',
+  LEASED: 'Leasing a new vehicle experiencing repeated defects under the manufacturer\'s warranty.',
 }
 
 const TYPE_ICONS: Record<ApplicationType, string> = {
@@ -30,7 +30,6 @@ export default function SelectType() {
     if (!selected || !acknowledged) return
     setLoading(true)
     try {
-      // Call real API — creates the application record in DB
       const res = await createApplication(selected)
       if (!res.success) {
         toast.error(res.message || 'Failed to start application.')
@@ -50,65 +49,99 @@ export default function SelectType() {
   }
 
   return (
-    <div style={{ maxWidth: 720 }}>
-      <div style={{ marginBottom: 32 }}>
-        <h1 style={{ fontSize: 'var(--text-xl-med)', fontWeight: 800, color: 'var(--theme-color)', marginBottom: 8 }}>
+    <div className="wizard-shell-container" style={{ maxWidth: 1100, width: '100%' }}>
+      <div className="vll-card" style={{ padding: '32px 36px', width: '100%' }}>
+      {/* Header — matches other steps */}
+      <div style={{ marginBottom: 28 }}>
+        <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 700, color: 'var(--theme-color)', marginBottom: 6 }}>
           Select Application Type
-        </h1>
-        <p style={{ fontSize: 'var(--text-base)', color: 'var(--ms-gray-dark)' }}>
+        </h2>
+        <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)' }}>
           Choose the type of Lemon Law application that applies to your situation.
         </p>
       </div>
 
+      {/* Three square selection cards */}
       <fieldset style={{ border: 'none', padding: 0, margin: '0 0 28px' }}>
-        <legend className="vll-label" style={{ marginBottom: 16, fontSize: 'var(--text-base)', fontWeight: 700 }}>
+        <legend className="vll-label" style={{ marginBottom: 16 }}>
           Application Type <span className="required">*</span>
         </legend>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {(Object.keys(TYPE_DESCRIPTIONS) as ApplicationType[]).map((type) => (
-            <label
-              key={type}
-              style={{
-                display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 20px',
-                border: `2px solid ${selected === type ? 'var(--theme-color)' : '#e5e7eb'}`,
-                borderRadius: 10, cursor: 'pointer',
-                background: selected === type ? 'rgba(2,101,163,0.04)' : '#fff',
-                transition: 'all 0.15s',
-              }}
-            >
-              <input
-                type="radio"
-                name="applicationType"
-                value={type}
-                checked={selected === type}
-                onChange={() => setSelected(type)}
-                style={{ marginTop: 4, accentColor: 'var(--theme-color)', width: 18, height: 18, flexShrink: 0 }}
-              />
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, flex: 1 }}>
-                <div className="page-heading-icon-wrapper" style={{ flexShrink: 0 }}>
-                  <i className={`fa-solid ${TYPE_ICONS[type]} page-heading-icon`}></i>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16 }}>
+          {(Object.keys(TYPE_DESCRIPTIONS) as ApplicationType[]).map((type) => {
+            const isSelected = selected === type
+            return (
+              <label
+                key={type}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  textAlign: 'center',
+                  gap: 14,
+                  padding: '28px 20px 24px',
+                  border: `2px solid ${isSelected ? 'var(--theme-color)' : '#e5e7eb'}`,
+                  borderRadius: 12,
+                  cursor: 'pointer',
+                  background: isSelected ? 'rgba(2,101,163,0.05)' : '#fafafa',
+                  transition: 'all 0.15s',
+                  position: 'relative',
+                }}
+              >
+                {/* Hidden radio */}
+                <input
+                  type="radio"
+                  name="applicationType"
+                  value={type}
+                  checked={isSelected}
+                  onChange={() => { setSelected(type); setAcknowledged(false) }}
+                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0 }}
+                />
+
+                {/* Selected indicator */}
+                <div style={{
+                  position: 'absolute', top: 12, right: 12,
+                  width: 20, height: 20, borderRadius: '50%',
+                  border: `2px solid ${isSelected ? 'var(--theme-color)' : '#d1d5db'}`,
+                  background: isSelected ? 'var(--theme-color)' : '#fff',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'all 0.15s',
+                }}>
+                  {isSelected && <i className="fa-solid fa-check" style={{ fontSize: 9, color: '#fff' }}></i>}
                 </div>
+
+                {/* Icon */}
+                <div style={{
+                  width: 56, height: 56, borderRadius: '50%',
+                  background: isSelected ? 'rgba(2,101,163,0.12)' : 'rgba(2,101,163,0.06)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'background 0.15s',
+                }}>
+                  <i className={`fa-solid ${TYPE_ICONS[type]}`} style={{ fontSize: 22, color: 'var(--theme-color)' }}></i>
+                </div>
+
+                {/* Label */}
                 <div>
-                  <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: 'var(--dark-color)', margin: '0 0 4px' }}>
+                  <p style={{ fontWeight: 700, fontSize: 'var(--text-base)', color: isSelected ? 'var(--theme-color)' : 'var(--dark-color)', margin: '0 0 8px', lineHeight: 1.3 }}>
                     {APPLICATION_TYPE_LABELS[type]}
                   </p>
-                  <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', margin: 0, lineHeight: 1.6 }}>
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: 0, lineHeight: 1.6 }}>
                     {TYPE_DESCRIPTIONS[type]}
                   </p>
                 </div>
-              </div>
-            </label>
-          ))}
+              </label>
+            )
+          })}
         </div>
       </fieldset>
 
+      {/* Acknowledgement */}
       {selected && (
         <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 28, cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={acknowledged}
             onChange={(e) => setAcknowledged(e.target.checked)}
-            style={{ marginTop: 3, accentColor: 'var(--theme-color)', width: 18, height: 18, flexShrink: 0 }}
+            style={{ marginTop: 3, accentColor: 'var(--theme-color)', width: 16, height: 16, flexShrink: 0 }}
           />
           <span style={{ fontSize: 'var(--text-sm)', color: 'var(--dark-color)', lineHeight: 1.6 }}>
             I confirm that I meet the eligibility criteria for{' '}
@@ -117,18 +150,22 @@ export default function SelectType() {
         </label>
       )}
 
-      <button
-        onClick={handleContinue}
-        disabled={!selected || !acknowledged || loading}
-        className="btn-theme"
-        style={{ fontSize: 'var(--text-base)', padding: '12px 32px', display: 'inline-flex', alignItems: 'center', gap: 8 }}
-        aria-busy={loading}
-      >
-        {loading
-          ? <><i className="fa-solid fa-spinner fa-spin"></i> Starting…</>
-          : <><i className="fa-solid fa-arrow-right"></i> Continue</>
-        }
-      </button>
+      {/* Continue button */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: 24, borderTop: '1px solid #e5e7eb' }}>
+        <button
+          onClick={handleContinue}
+          disabled={!selected || !acknowledged || loading}
+          className="btn-theme"
+          style={{ fontSize: 'var(--text-base)', padding: '11px 28px', display: 'inline-flex', alignItems: 'center', gap: 8 }}
+          aria-busy={loading}
+        >
+          {loading
+            ? <><i className="fa-solid fa-spinner fa-spin"></i> Starting…</>
+            : <>Continue <i className="fa-solid fa-arrow-right"></i></>
+          }
+        </button>
+      </div>
+    </div>
     </div>
   )
 }

@@ -111,7 +111,7 @@ export default function Step6ReviewSubmit() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 700, color: 'var(--theme-color)', marginBottom: 6 }}>
           Review & Submit
         </h2>
@@ -120,90 +120,106 @@ export default function Step6ReviewSubmit() {
         </p>
       </div>
 
-      {/* Summary */}
-      <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16 }}>Application Summary</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 24px', fontSize: 'var(--text-sm)' }}>
-          <div><span style={{ color: 'var(--ms-gray-dark)' }}>Case Number:</span></div>
-          <div><strong style={{ color: 'var(--theme-color)' }}>{state.caseNumber}</strong></div>
-          <div><span style={{ color: 'var(--ms-gray-dark)' }}>Application Type:</span></div>
-          <div><strong>{APPLICATION_TYPE_LABELS[state.applicationType ?? 'NEW_CAR']}</strong></div>
-          <div><span style={{ color: 'var(--ms-gray-dark)' }}>Steps Completed:</span></div>
-          <div>
-            {[1,2,3,4,5].map(s => (
-              <span key={s} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: '50%', background: state.completedSteps.includes(s) ? 'var(--mass-primary-green)' : '#e5e7eb', color: state.completedSteps.includes(s) ? '#fff' : '#9ca3af', fontSize: 11, fontWeight: 700, marginRight: 4 }}>
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Two-panel layout: summary + verification left, certification right */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 28px', alignItems: 'start' }}>
 
-      {/* Email verification */}
-      <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 12 }}>
-          <i className="fa-solid fa-envelope" style={{ marginRight: 8, color: 'var(--theme-color)' }}></i>
-          Email Verification
-        </h3>
-        {!codeVerified ? (
-          <>
-            <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', marginBottom: 16 }}>
-              We'll send a one-time verification code to <strong>{consumerEmail || 'your email address'}</strong> to confirm your identity.
+        {/* ── LEFT: Summary + Email Verification ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            Application Summary
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '6px 16px', fontSize: 'var(--text-sm)' }}>
+            <span style={{ color: 'var(--ms-gray-dark)' }}>Case Number</span>
+            <strong style={{ color: 'var(--theme-color)' }}>{state.caseNumber}</strong>
+            <span style={{ color: 'var(--ms-gray-dark)' }}>Application Type</span>
+            <strong>{APPLICATION_TYPE_LABELS[state.applicationType ?? 'NEW_CAR']}</strong>
+            <span style={{ color: 'var(--ms-gray-dark)' }}>Steps Completed</span>
+            <div>
+              {[1,2,3,4,5].map(s => (
+                <span key={s} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', background: state.completedSteps.includes(s) ? 'var(--mass-primary-green)' : '#e5e7eb', color: state.completedSteps.includes(s) ? '#fff' : '#9ca3af', fontSize: 10, fontWeight: 700, marginRight: 3 }}>
+                  {s}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Email Verification */}
+          <div style={{ marginTop: 8 }}>
+            <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 10px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+              <i className="fa-solid fa-envelope" style={{ marginRight: 6, color: 'var(--theme-color)' }}></i>
+              Email Verification
             </p>
-            {!codeSent ? (
-              <button onClick={handleSendCode} disabled={sendingCode} className="btn-theme" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                {sendingCode ? <><i className="fa-solid fa-spinner fa-spin"></i> Sending…</> : <><i className="fa-solid fa-paper-plane"></i> Send Verification Code</>}
-              </button>
+            {!codeVerified ? (
+              <>
+                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', marginBottom: 12 }}>
+                  We'll send a one-time code to <strong>{consumerEmail || 'your email'}</strong>.
+                </p>
+                {!codeSent ? (
+                  <button onClick={handleSendCode} disabled={sendingCode} className="btn-theme" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)' }}>
+                    {sendingCode ? <><i className="fa-solid fa-spinner fa-spin"></i> Sending…</> : <><i className="fa-solid fa-paper-plane"></i> Send Code</>}
+                  </button>
+                ) : (
+                  <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+                    <div style={{ flex: 1 }}>
+                      <label className="vll-label" htmlFor="code">6-digit code</label>
+                      <input id="code" type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} className="vll-input" placeholder="123456" maxLength={8} style={{ fontFamily: 'monospace', letterSpacing: 4, fontSize: 18 }} />
+                    </div>
+                    <button onClick={handleVerifyCode} disabled={verifyingCode || !verificationCode.trim()} className="btn-theme" style={{ padding: '10px 16px', flexShrink: 0 }}>
+                      {verifyingCode ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Verify'}
+                    </button>
+                  </div>
+                )}
+                {codeSent && (
+                  <button onClick={handleSendCode} disabled={sendingCode} style={{ marginTop: 8, background: 'none', border: 'none', color: 'var(--theme-color)', fontSize: 'var(--text-sm)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                    Resend code
+                  </button>
+                )}
+              </>
             ) : (
-              <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', maxWidth: 360 }}>
-                <div style={{ flex: 1 }}>
-                  <label className="vll-label" htmlFor="code">Enter the 6-digit code sent to your email</label>
-                  <input id="code" type="text" value={verificationCode} onChange={e => setVerificationCode(e.target.value)} className="vll-input" placeholder="123456" maxLength={8} style={{ fontFamily: 'monospace', letterSpacing: 4, fontSize: 18 }} />
-                </div>
-                <button onClick={handleVerifyCode} disabled={verifyingCode || !verificationCode.trim()} className="btn-theme" style={{ flexShrink: 0, padding: '10px 20px' }}>
-                  {verifyingCode ? <i className="fa-solid fa-spinner fa-spin"></i> : 'Verify'}
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--mass-primary-green)', fontWeight: 600, fontSize: 'var(--text-sm)' }}>
+                <i className="fa-solid fa-check-circle" style={{ fontSize: 18 }}></i>
+                Email verified
               </div>
             )}
-            {codeSent && (
-              <button onClick={handleSendCode} disabled={sendingCode} style={{ marginTop: 10, background: 'none', border: 'none', color: 'var(--theme-color)', fontSize: 'var(--text-sm)', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
-                Resend code
-              </button>
-            )}
-          </>
-        ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'var(--mass-primary-green)', fontWeight: 600 }}>
-            <i className="fa-solid fa-check-circle" style={{ fontSize: 20 }}></i>
-            Email verified successfully
           </div>
-        )}
-      </div>
-
-      {/* Certification */}
-      <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16 }}>
-          <i className="fa-solid fa-pen-to-square" style={{ marginRight: 8, color: 'var(--theme-color)' }}></i>
-          Certification & Signature
-        </h3>
-        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, cursor: 'pointer' }}>
-          <input type="checkbox" checked={certAccepted} onChange={e => setCertAccepted(e.target.checked)} style={{ marginTop: 3, accentColor: 'var(--theme-color)', width: 18, height: 18, flexShrink: 0 }} />
-          <span style={{ fontSize: 'var(--text-sm)', lineHeight: 1.7, color: 'var(--dark-color)' }}>
-            I certify that the information provided in this application is accurate and complete to the best of my knowledge.
-            I understand that providing false information may result in dismissal of my application.
-          </span>
-        </label>
-        <div style={{ maxWidth: 400 }}>
-          <label className="vll-label" htmlFor="signature">
-            Electronic Signature — Type your full legal name<span className="required">*</span>
-          </label>
-          <input
-            id="signature" type="text" value={signatureName}
-            onChange={e => setSignatureName(e.target.value)}
-            className="vll-input"
-            placeholder="Jane M. Smith"
-            style={{ fontStyle: 'italic', fontSize: 18 }}
-          />
         </div>
+
+        {/* ── RIGHT: Certification + Signature ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            <i className="fa-solid fa-pen-to-square" style={{ marginRight: 6, color: 'var(--theme-color)' }}></i>
+            Certification & Signature
+          </p>
+
+          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+            <input type="checkbox" checked={certAccepted} onChange={e => setCertAccepted(e.target.checked)} style={{ marginTop: 3, accentColor: 'var(--theme-color)', width: 16, height: 16, flexShrink: 0 }} />
+            <span style={{ fontSize: 'var(--text-sm)', lineHeight: 1.7, color: 'var(--dark-color)' }}>
+              I certify that the information provided in this application is accurate and complete to the best of my knowledge.
+              I understand that providing false information may result in dismissal of my application.
+            </span>
+          </label>
+
+          <div>
+            <label className="vll-label" htmlFor="signature">
+              Electronic Signature — Type your full legal name<span className="required">*</span>
+            </label>
+            <input
+              id="signature" type="text" value={signatureName}
+              onChange={e => setSignatureName(e.target.value)}
+              className="vll-input"
+              placeholder="Jane M. Smith"
+              style={{ fontStyle: 'italic', fontSize: 18 }}
+            />
+          </div>
+
+          {(!codeVerified || !certAccepted || !signatureName.trim()) && (
+            <div style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 6, padding: '10px 14px', fontSize: 'var(--text-xs)', color: '#92400e' }}>
+              <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 6 }}></i>
+              To submit: verify your email, accept the certification, and sign your name.
+            </div>
+          )}
+        </div>
+
       </div>
 
       <WizardNav

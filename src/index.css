@@ -583,3 +583,25 @@ textarea:focus-visible {
   .dashboard-main-area { margin-left: 0; width: 100%; }
   .dashboard-header-wrapper { padding: 12px 16px; }
 }
+
+/* ── Form responsive improvements ────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Stack form fields on mobile */
+  .vll-form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+  .vll-form-grid > div[style*="gridColumn: 'span 1'"],
+  .vll-form-grid > div[style*="grid-column: span 1"] {
+    grid-column: span 1 !important;
+  }
+  .vll-form-grid > div[style*="gridColumn: 'span 2'"],
+  .vll-form-grid > div[style*="grid-column: span 2"] {
+    grid-column: span 1 !important;
+  }
+
+  /* Stack two-panel layouts on mobile */
+  .wizard-shell-container > .vll-card > div > div[style*="gridTemplateColumns: '1fr 1fr'"] {
+    grid-template-columns: 1fr !important;
+  }
+}

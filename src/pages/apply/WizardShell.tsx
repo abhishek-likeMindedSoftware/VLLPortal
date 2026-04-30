@@ -23,7 +23,7 @@ export default function WizardShell() {
   const StepComponent = STEP_COMPONENTS[currentStep]
 
   return (
-    <div style={{ maxWidth: 800, width: '100%' }}>
+    <div className="wizard-shell-container" style={{ maxWidth: 1100, width: '100%' }}>
       {/* Application type + case number */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
         {state.applicationType && (

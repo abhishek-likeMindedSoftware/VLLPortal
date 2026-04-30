@@ -52,7 +52,7 @@ export default function Step4Narrative() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 700, color: 'var(--theme-color)', marginBottom: 6 }}>
           Your Statement
         </h2>
@@ -61,60 +61,80 @@ export default function Step4Narrative() {
         </p>
       </div>
 
-      <div style={{ marginBottom: 24 }}>
-        <label className="vll-label" htmlFor="narrative">
-          Narrative Statement<span className="required">*</span>
-        </label>
-        <textarea
-          id="narrative"
-          value={narrative}
-          onChange={e => { setNarrative(e.target.value); setError('') }}
-          className={`vll-input${error ? ' error' : ''}`}
-          rows={8}
-          maxLength={MAX}
-          placeholder="Describe the defects, how they affect your vehicle's use and safety, and what steps you have taken to resolve the issue…"
-          style={{ resize: 'vertical' }}
-          aria-describedby="narrative-count"
-        />
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-          {error && <p className="field-error" role="alert">{error}</p>}
-          <p id="narrative-count" style={{ fontSize: 'var(--text-xs)', color: charColor, fontWeight: 600, marginLeft: 'auto' }}>
-            {narrative.length} / {MAX} characters {narrative.length < MIN && `(minimum ${MIN})`}
-          </p>
-        </div>
-      </div>
+      {/* Two-panel layout: narrative left, options right */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 28px', alignItems: 'start' }}>
 
-      <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16 }}>
-          Prior Contact
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-            <input type="checkbox" checked={priorDealer} onChange={e => setPriorDealer(e.target.checked)} style={{ accentColor: 'var(--theme-color)', width: 16, height: 16 }} />
-            I have already contacted the dealer about this issue
+        {/* ── LEFT: Narrative ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            Narrative Statement
+          </p>
+          <label className="vll-label" htmlFor="narrative" style={{ marginTop: 6 }}>
+            Describe the issue<span className="required">*</span>
           </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
-            <input type="checkbox" checked={priorMfr} onChange={e => setPriorMfr(e.target.checked)} style={{ accentColor: 'var(--theme-color)', width: 16, height: 16 }} />
-            I have already contacted the manufacturer about this issue
-          </label>
+          <textarea
+            id="narrative"
+            value={narrative}
+            onChange={e => { setNarrative(e.target.value); setError('') }}
+            className={`vll-input${error ? ' error' : ''}`}
+            rows={12}
+            maxLength={MAX}
+            placeholder="Describe the defects, how they affect your vehicle's use and safety, and what steps you have taken to resolve the issue…"
+            style={{ resize: 'vertical' }}
+            aria-describedby="narrative-count"
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
+            {error && <p className="field-error" role="alert">{error}</p>}
+            <p id="narrative-count" style={{ fontSize: 'var(--text-xs)', color: charColor, fontWeight: 600, marginLeft: 'auto' }}>
+              {narrative.length} / {MAX} {narrative.length < MIN && `(min ${MIN})`}
+            </p>
+          </div>
+        </div>
+
+        {/* ── RIGHT: Prior Contact + Resolution ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            Prior Contact & Resolution
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+              <input type="checkbox" checked={priorDealer} onChange={e => setPriorDealer(e.target.checked)} style={{ accentColor: 'var(--theme-color)', width: 15, height: 15, flexShrink: 0 }} />
+              I have already contacted the dealer about this issue
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 'var(--text-sm)', fontWeight: 500 }}>
+              <input type="checkbox" checked={priorMfr} onChange={e => setPriorMfr(e.target.checked)} style={{ accentColor: 'var(--theme-color)', width: 15, height: 15, flexShrink: 0 }} />
+              I have already contacted the manufacturer about this issue
+            </label>
+          </div>
+
           {(priorDealer || priorMfr) && (
-            <div style={{ marginTop: 8 }}>
+            <div>
               <label className="vll-label" htmlFor="priorNotes">Details of prior contact attempts</label>
-              <textarea id="priorNotes" value={priorNotes} onChange={e => setPriorNotes(e.target.value)} className="vll-input" rows={3} placeholder="Describe when and how you contacted them and what response you received…" style={{ resize: 'vertical' }} />
+              <textarea
+                id="priorNotes"
+                value={priorNotes}
+                onChange={e => setPriorNotes(e.target.value)}
+                className="vll-input"
+                rows={4}
+                placeholder="Describe when and how you contacted them and what response you received…"
+                style={{ resize: 'vertical' }}
+              />
             </div>
           )}
-        </div>
-      </div>
 
-      <div style={{ marginBottom: 8 }}>
-        <label className="vll-label" htmlFor="resolution">Desired Resolution<span className="required">*</span></label>
-        <select id="resolution" value={desiredResolution} onChange={e => setDesiredResolution(e.target.value)} className="vll-input" style={{ maxWidth: 320 }}>
-          <option value="REFUND">Full Refund</option>
-          <option value="REPLACEMENT">Vehicle Replacement</option>
-          <option value="REIMBURSEMENT">Reimbursement of Expenses</option>
-          <option value="ARBITRATION">Arbitration</option>
-          <option value="UNSURE">Unsure</option>
-        </select>
+          <div>
+            <label className="vll-label" htmlFor="resolution">Desired Resolution<span className="required">*</span></label>
+            <select id="resolution" value={desiredResolution} onChange={e => setDesiredResolution(e.target.value)} className="vll-input">
+              <option value="REFUND">Full Refund</option>
+              <option value="REPLACEMENT">Vehicle Replacement</option>
+              <option value="REIMBURSEMENT">Reimbursement of Expenses</option>
+              <option value="ARBITRATION">Arbitration</option>
+              <option value="UNSURE">Unsure</option>
+            </select>
+          </div>
+        </div>
+
       </div>
 
       <WizardNav onBack={() => navigate(`/apply/${applicationId}/step/3`)} onNext={handleNext} loading={loading} />

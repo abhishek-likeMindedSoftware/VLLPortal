@@ -123,7 +123,7 @@ export default function Step5Documents() {
 
   return (
     <div>
-      <div style={{ marginBottom: 28 }}>
+      <div style={{ marginBottom: 20 }}>
         <h2 style={{ fontSize: 'var(--text-lg-med)', fontWeight: 700, color: 'var(--theme-color)', marginBottom: 6 }}>
           Upload Documents
         </h2>
@@ -132,117 +132,91 @@ export default function Step5Documents() {
         </p>
       </div>
 
-      {/* Required docs checklist */}
-      <div className="vll-card" style={{ padding: 20, marginBottom: 24 }}>
-        <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 12 }}>
-          Required Documents for {appType.replace('_', ' ')}
-        </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {requiredDocs.map(doc => {
-            const uploaded = docs.some(
-              d => DOC_TYPES.find(t => t.value === d.type)?.label === doc && d.status === 'done'
-            )
-            return (
-              <div key={doc} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'var(--text-sm)' }}>
-                <i
-                  className={`fa-solid ${uploaded ? 'fa-check-circle' : 'fa-circle'}`}
-                  style={{ color: uploaded ? 'var(--mass-primary-green)' : '#d1d5db', fontSize: 16 }}
-                />
-                <span style={{ fontWeight: uploaded ? 600 : 400, color: uploaded ? 'var(--dark-color)' : 'var(--ms-gray-dark)' }}>
-                  {doc}
-                </span>
-                {uploaded && (
-                  <span style={{ fontSize: 'var(--text-xs)', color: 'var(--mass-primary-green)', fontWeight: 600 }}>
-                    Uploaded
-                  </span>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
+      {/* Two-panel layout: checklist left, upload right */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 28px', alignItems: 'start' }}>
 
-      {/* Upload area */}
-      <div style={{ marginBottom: 20 }}>
-        <label className="vll-label">Document Type</label>
-        <select
-          value={selectedType}
-          onChange={e => setSelectedType(e.target.value)}
-          className="vll-input"
-          style={{ maxWidth: 280, marginBottom: 16 }}
-        >
-          {DOC_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-        </select>
-
-        <div
-          onDragOver={e => { e.preventDefault(); setDragOver(true) }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          style={{
-            border: `2px dashed ${dragOver ? 'var(--theme-color)' : '#d1d5db'}`,
-            borderRadius: 10, padding: '32px 24px', textAlign: 'center',
-            background: dragOver ? 'rgba(2,101,163,0.04)' : '#fafafa',
-            transition: 'all 0.15s', cursor: 'pointer',
-          }}
-        >
-          <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: 32, color: 'var(--theme-color)', marginBottom: 12, display: 'block' }} />
-          <p style={{ fontWeight: 600, fontSize: 'var(--text-base)', color: 'var(--dark-color)', margin: '0 0 6px' }}>
-            Drag & drop files here
+        {/* ── LEFT: Required docs checklist ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            Required for {appType.replace('_', ' ')}
           </p>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--ms-gray-dark)', margin: '0 0 16px' }}>or</p>
-          <label className="btn-theme" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <i className="fa-solid fa-folder-open" /> Browse Files
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.jpg,.jpeg,.png,.tiff"
-              onChange={handleFileChange}
-              style={{ display: 'none' }}
-            />
-          </label>
-        </div>
-      </div>
-
-      {/* Uploaded files */}
-      {docs.length > 0 && (
-        <div style={{ marginBottom: 8 }}>
-          <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 12 }}>
-            Uploaded Files ({docs.filter(d => d.status === 'done').length})
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {docs.map(doc => (
-              <div key={doc.id} className="vll-card" style={{ padding: '12px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                <i className="fa-solid fa-file-pdf" style={{ color: '#dc3545', fontSize: 20, flexShrink: 0 }} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {doc.name}
-                  </p>
-                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: 0 }}>
-                    {DOC_TYPES.find(t => t.value === doc.type)?.label} · {doc.size}
-                  </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {requiredDocs.map(doc => {
+              const uploaded = docs.some(
+                d => DOC_TYPES.find(t => t.value === d.type)?.label === doc && d.status === 'done'
+              )
+              return (
+                <div key={doc} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'var(--text-sm)', padding: '8px 12px', borderRadius: 6, background: uploaded ? 'rgba(56,133,87,0.06)' : '#fafafa', border: `1px solid ${uploaded ? 'rgba(56,133,87,0.2)' : '#e5e7eb'}` }}>
+                  <i className={`fa-solid ${uploaded ? 'fa-check-circle' : 'fa-circle'}`} style={{ color: uploaded ? 'var(--mass-primary-green)' : '#d1d5db', fontSize: 16, flexShrink: 0 }} />
+                  <span style={{ fontWeight: uploaded ? 600 : 400, color: uploaded ? 'var(--dark-color)' : 'var(--ms-gray-dark)' }}>{doc}</span>
+                  {uploaded && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--mass-primary-green)', fontWeight: 600, marginLeft: 'auto' }}>✓</span>}
                 </div>
-                {doc.status === 'uploading' && (
-                  <i className="fa-solid fa-spinner fa-spin" style={{ color: 'var(--theme-color)' }} />
-                )}
-                {doc.status === 'done' && (
-                  <i className="fa-solid fa-check-circle" style={{ color: 'var(--mass-primary-green)', fontSize: 18 }} />
-                )}
-                {doc.status === 'error' && (
-                  <i className="fa-solid fa-circle-exclamation" style={{ color: '#dc3545', fontSize: 18 }} />
-                )}
-                <button
-                  onClick={() => removeDoc(doc)}
-                  disabled={doc.status === 'uploading'}
-                  style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 4 }}
-                  aria-label="Remove document"
-                >
-                  <i className="fa-solid fa-xmark" />
-                </button>
+              )
+            })}
+          </div>
+
+          {/* Uploaded files list */}
+          {docs.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', marginBottom: 10 }}>
+                Uploaded ({docs.filter(d => d.status === 'done').length})
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {docs.map(doc => (
+                  <div key={doc.id} className="vll-card" style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <i className="fa-solid fa-file-pdf" style={{ color: '#dc3545', fontSize: 16, flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 600, fontSize: 'var(--text-xs)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</p>
+                      <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: 0 }}>{DOC_TYPES.find(t => t.value === doc.type)?.label} · {doc.size}</p>
+                    </div>
+                    {doc.status === 'uploading' && <i className="fa-solid fa-spinner fa-spin" style={{ color: 'var(--theme-color)', fontSize: 13 }} />}
+                    {doc.status === 'done' && <i className="fa-solid fa-check-circle" style={{ color: 'var(--mass-primary-green)', fontSize: 14 }} />}
+                    {doc.status === 'error' && <i className="fa-solid fa-circle-exclamation" style={{ color: '#dc3545', fontSize: 14 }} />}
+                    <button onClick={() => removeDoc(doc)} disabled={doc.status === 'uploading'} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 2 }} aria-label="Remove">
+                      <i className="fa-solid fa-xmark" style={{ fontSize: 13 }} />
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── RIGHT: Upload area ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <p style={{ fontWeight: 700, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 2px', borderBottom: '1px solid #e5e7eb', paddingBottom: 8 }}>
+            Upload a Document
+          </p>
+
+          <div>
+            <label className="vll-label">Document Type</label>
+            <select value={selectedType} onChange={e => setSelectedType(e.target.value)} className="vll-input">
+              {DOC_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          </div>
+
+          <div
+            onDragOver={e => { e.preventDefault(); setDragOver(true) }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleDrop}
+            style={{
+              border: `2px dashed ${dragOver ? 'var(--theme-color)' : '#d1d5db'}`,
+              borderRadius: 10, padding: '28px 20px', textAlign: 'center',
+              background: dragOver ? 'rgba(2,101,163,0.04)' : '#fafafa',
+              transition: 'all 0.15s', cursor: 'pointer',
+            }}
+          >
+            <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: 28, color: 'var(--theme-color)', marginBottom: 10, display: 'block' }} />
+            <p style={{ fontWeight: 600, fontSize: 'var(--text-sm)', color: 'var(--dark-color)', margin: '0 0 4px' }}>Drag & drop files here</p>
+            <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: '0 0 14px' }}>or</p>
+            <label className="btn-theme" style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, fontSize: 'var(--text-sm)' }}>
+              <i className="fa-solid fa-folder-open" /> Browse Files
+              <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.tiff" onChange={handleFileChange} style={{ display: 'none' }} />
+            </label>
           </div>
         </div>
-      )}
+
+      </div>
 
       <WizardNav
         onBack={() => navigate(`/apply/${applicationId}/step/4`)}
