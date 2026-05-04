@@ -36,14 +36,35 @@ export default function Step2VehicleInfo() {
   const [manufacturerName, setManufacturerName] = useState('')
   const [warrantyType, setWarrantyType] = useState('MANUFACTURERS_WARRANTY')
 
-  const handleVinBlur = async () => {
-    if (vin.length !== 17) return
-    setVinStatus('loading')
+  // Trigger VIN lookup as soon as 17 characters are entered — no need to blur
+  const handleVinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase()
+    setVin(value)
+    // Reset decode state whenever the VIN changes
+    setVinStatus('idle')
+    setVinResult(null)
     setVinConfirmed(false)
+    setVehicleYear('')
+    setVehicleMake('')
+    setVehicleModel('')
+    setManufacturerName('')
+    // Auto-trigger lookup the moment we have a full 17-character VIN
+    if (value.length === 17) {
+      triggerVinLookup(value)
+    }
+  }
+
+  const triggerVinLookup = async (vinValue: string) => {
+    setVinStatus('loading')
     try {
-      const result = await lookupVin(vin)
+      const result = await lookupVin(vinValue)
       if (result && result.isValid) {
-        setVinResult({ year: result.year ?? 2020, make: result.make ?? '', model: result.model ?? '', trim: result.trim ?? '' })
+        setVinResult({
+          year:  result.year  ?? 0,
+          make:  result.make  ?? '',
+          model: result.model ?? '',
+          trim:  result.trim  ?? ''
+        })
         setVehicleYear(String(result.year ?? ''))
         setVehicleMake(result.make ?? '')
         setVehicleModel(result.model ?? '')
@@ -57,14 +78,8 @@ export default function Step2VehicleInfo() {
         toast.error('This VIN could not be decoded. Please verify the number and try again.')
       }
     } catch {
-      // Fallback to static decode for demo
-      const fallback = { year: 2020, make: 'Unknown', model: 'Vehicle', trim: 'Standard' }
-      setVinResult(fallback)
-      setVehicleYear(String(fallback.year))
-      setVehicleMake(fallback.make)
-      setVehicleModel(fallback.model)
-      setManufacturerName(fallback.make)
-      setVinStatus('valid')
+      setVinStatus('invalid')
+      toast.error('VIN lookup failed. Please check your connection and try again.')
     }
   }
 
@@ -125,8 +140,7 @@ export default function Step2VehicleInfo() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <input
                 id="vin" type="text" value={vin}
-                onChange={e => { setVin(e.target.value.toUpperCase()); setVinStatus('idle'); setVinResult(null); setVinConfirmed(false) }}
-                onBlur={handleVinBlur}
+                onChange={handleVinChange}
                 className="vll-input"
                 maxLength={17}
                 placeholder="17-character VIN"
@@ -169,7 +183,14 @@ export default function Step2VehicleInfo() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 12px' }}>
             <div>
               <label className="vll-label">Year<span className="required">*</span></label>
-              <input type="number" value={vehicleYear} onChange={e => setVehicleYear(e.target.value)} className="vll-input" placeholder="2021" />
+              <input
+                type="number" value={vehicleYear}
+                onChange={e => setVehicleYear(e.target.value)}
+                className="vll-input"
+                placeholder="2021"
+                readOnly={!!vinResult?.year}
+                style={vinResult?.year ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#475569' } : undefined}
+              />
             </div>
             <div>
               <label className="vll-label">Color</label>
@@ -179,17 +200,38 @@ export default function Step2VehicleInfo() {
 
           <div>
             <label className="vll-label">Make<span className="required">*</span></label>
-            <input type="text" value={vehicleMake} onChange={e => setVehicleMake(e.target.value)} className="vll-input" placeholder="Honda" />
+            <input
+              type="text" value={vehicleMake}
+              onChange={e => setVehicleMake(e.target.value)}
+              className="vll-input"
+              placeholder="Honda"
+              readOnly={!!vinResult?.make}
+              style={vinResult?.make ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#475569' } : undefined}
+            />
           </div>
 
           <div>
             <label className="vll-label">Model<span className="required">*</span></label>
-            <input type="text" value={vehicleModel} onChange={e => setVehicleModel(e.target.value)} className="vll-input" placeholder="Civic" />
+            <input
+              type="text" value={vehicleModel}
+              onChange={e => setVehicleModel(e.target.value)}
+              className="vll-input"
+              placeholder="Civic"
+              readOnly={!!vinResult?.model}
+              style={vinResult?.model ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#475569' } : undefined}
+            />
           </div>
 
           <div>
             <label className="vll-label">Manufacturer Name<span className="required">*</span></label>
-            <input type="text" value={manufacturerName} onChange={e => setManufacturerName(e.target.value)} className="vll-input" placeholder="Honda" />
+            <input
+              type="text" value={manufacturerName}
+              onChange={e => setManufacturerName(e.target.value)}
+              className="vll-input"
+              placeholder="Honda"
+              readOnly={!!vinResult?.make}
+              style={vinResult?.make ? { background: '#f1f5f9', cursor: 'not-allowed', color: '#475569' } : undefined}
+            />
           </div>
 
           <div>
