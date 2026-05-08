@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { getSession, saveSession } from '@/utils/storage'
-import { getPortalStatus, getPortalDocuments, uploadPortalDocument } from '@/services/applicationService'
+import { getPortalStatus, getPortalDocuments, uploadPortalDocument, getPortalDocumentPreviewUrl } from '@/services/applicationService'
 import { toast } from 'react-toastify'
 
 const MILESTONES = [
@@ -36,14 +36,33 @@ const DOC_TYPES = [
   { value: 'OTHER',                       label: 'Other' },
 ]
 
+interface PortalHearing {
+  hearingDate: string
+  format: string
+  location?: string
+  arbitratorName?: string
+  outcome: string
+}
+
+interface PortalDecision {
+  decisionType: string
+  decisionTypeFriendly: string
+  decisionDate: string
+  refundAmount?: number
+  complianceDeadline?: string
+}
+
 interface PortalStatus {
   applicationId: string
   caseNumber: string
   status: string
   applicationTypeFriendly?: string
   submittedAt: string
-  milestones?: Array<{ label: string; completed: boolean }>
+  daysOpen?: number
+  milestones?: Array<{ label: string; completed: boolean; completedAt?: string }>
   notifications?: Array<{ type: string; subject: string; sentAt: string; deliveryStatus: string }>
+  hearing?: PortalHearing
+  decision?: PortalDecision
 }
 
 interface DocumentItem {
@@ -73,6 +92,7 @@ export default function Status() {
 
   const [uploadType, setUploadType] = useState('REPAIR_RECORDS')
   const [uploading, setUploading]   = useState(false)
+  const [previewingDocId, setPreviewingDocId] = useState<string | null>(null)
 
   const fetchStatus = async (caseNumber: string, token?: string | null) => {
     setLoading(true)
@@ -87,8 +107,11 @@ export default function Status() {
       } else {
         setError(res.message ?? 'Unable to retrieve application status.')
       }
-    } catch {
-      setError('Unable to connect. Please try again.')
+    } catch (err: unknown) {
+      // Try to extract the API message from axios error response before falling back
+      const axiosErr = err as { response?: { data?: { message?: string } } }
+      const apiMessage = axiosErr?.response?.data?.message
+      setError(apiMessage ?? 'Unable to connect. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -131,6 +154,24 @@ export default function Status() {
       toast.error('Upload failed. Please try again.')
     } finally {
       setUploading(false)
+    }
+  }
+
+  const handlePreviewDocument = async (documentId: string) => {
+    if (!status) return
+    const token = session.token ?? urlToken ?? ''
+    setPreviewingDocId(documentId)
+    try {
+      const url = await getPortalDocumentPreviewUrl(documentId, status.caseNumber, token)
+      if (url) {
+        window.open(url, '_blank')
+      } else {
+        toast.error('Failed to generate preview link.')
+      }
+    } catch {
+      toast.error('Failed to open document preview.')
+    } finally {
+      setPreviewingDocId(null)
     }
   }
 
@@ -251,55 +292,163 @@ export default function Status() {
 
           {/* Tab: Progress */}
           {activeTab === 'status' && (
-            <div className="vll-card" style={{ padding: 24, marginBottom: 24 }}>
-              <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 24 }}>
-                Progress
-              </h3>
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
-                {MILESTONES.map((m, i) => {
-                  const done    = i <= currentIdx
-                  const current = i === currentIdx
-                  return (
-                    <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
-                      {i < MILESTONES.length - 1 && (
+            <>
+              {/* Milestone timeline */}
+              <div className="vll-card" style={{ padding: 24, marginBottom: 16 }}>
+                <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 24 }}>
+                  Progress
+                </h3>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 0 }}>
+                  {MILESTONES.map((m, i) => {
+                    const done    = i <= currentIdx
+                    const current = i === currentIdx
+                    return (
+                      <div key={m.key} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
+                        {i < MILESTONES.length - 1 && (
+                          <div style={{
+                            position: 'absolute', top: 16, left: '50%', width: '100%', height: 3,
+                            background: done && i < currentIdx ? 'var(--mass-primary-green)' : '#e5e7eb',
+                            zIndex: 0
+                          }} />
+                        )}
                         <div style={{
-                          position: 'absolute', top: 16, left: '50%', width: '100%', height: 3,
-                          background: done && i < currentIdx ? 'var(--mass-primary-green)' : '#e5e7eb',
-                          zIndex: 0
-                        }} />
-                      )}
-                      <div style={{
-                        width: 32, height: 32, borderRadius: '50%',
-                        background: done ? (current ? 'var(--theme-color)' : 'var(--mass-primary-green)') : '#e5e7eb',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        zIndex: 1, position: 'relative', flexShrink: 0
-                      }}>
-                        <i className={`fa-solid ${m.icon}`} style={{ color: done ? '#fff' : '#9ca3af', fontSize: 13 }} />
+                          width: 32, height: 32, borderRadius: '50%',
+                          background: done ? (current ? 'var(--theme-color)' : 'var(--mass-primary-green)') : '#e5e7eb',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          zIndex: 1, position: 'relative', flexShrink: 0
+                        }}>
+                          <i className={`fa-solid ${m.icon}`} style={{ color: done ? '#fff' : '#9ca3af', fontSize: 13 }} />
+                        </div>
+                        <p style={{
+                          fontSize: 10, fontWeight: current ? 700 : 500,
+                          color: done ? 'var(--dark-color)' : '#9ca3af',
+                          textAlign: 'center', marginTop: 8, lineHeight: 1.3
+                        }}>
+                          {m.label}
+                        </p>
                       </div>
-                      <p style={{
-                        fontSize: 10, fontWeight: current ? 700 : 500,
-                        color: done ? 'var(--dark-color)' : '#9ca3af',
-                        textAlign: 'center', marginTop: 8, lineHeight: 1.3
-                      }}>
-                        {m.label}
-                      </p>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
+
+                {/* Days open */}
+                {status.daysOpen !== undefined && (
+                  <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', marginTop: 20, marginBottom: 0, textAlign: 'right' }}>
+                    Case open for <strong>{status.daysOpen}</strong> day{status.daysOpen !== 1 ? 's' : ''}
+                  </p>
+                )}
+
+                {/* Incomplete alert */}
+                {status.status === 'INCOMPLETE' && (
+                  <div style={{ marginTop: 20, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '16px 20px' }}>
+                    <p style={{ fontWeight: 700, color: '#c2410c', margin: '0 0 6px' }}>
+                      <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 8 }} />
+                      Action Required
+                    </p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: '#7c2d12', margin: 0 }}>
+                      OCABR has identified missing information or documents. Please upload the requested documents in the Documents tab.
+                    </p>
+                  </div>
+                )}
+
+                {/* Withdrawn / Closed */}
+                {(status.status === 'WITHDRAWN' || status.status === 'CLOSED') && (
+                  <div style={{ marginTop: 20, background: '#f3f4f6', border: '1px solid #e5e7eb', borderRadius: 8, padding: '16px 20px' }}>
+                    <p style={{ fontWeight: 700, color: '#374151', margin: '0 0 4px' }}>
+                      <i className="fa-solid fa-circle-xmark" style={{ marginRight: 8, color: '#6b7280' }} />
+                      Case {status.status === 'WITHDRAWN' ? 'Withdrawn' : 'Closed'}
+                    </p>
+                    <p style={{ fontSize: 'var(--text-sm)', color: '#6b7280', margin: 0 }}>
+                      This case has been {status.status === 'WITHDRAWN' ? 'withdrawn' : 'closed'}. Contact OCABR if you have questions.
+                    </p>
+                  </div>
+                )}
               </div>
 
-              {status.status === 'INCOMPLETE' && (
-                <div style={{ marginTop: 24, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8, padding: '16px 20px' }}>
-                  <p style={{ fontWeight: 700, color: '#c2410c', margin: '0 0 6px' }}>
-                    <i className="fa-solid fa-triangle-exclamation" style={{ marginRight: 8 }} />
-                    Action Required
-                  </p>
-                  <p style={{ fontSize: 'var(--text-sm)', color: '#7c2d12', margin: 0 }}>
-                    OCABR has identified missing information or documents. Please upload the requested documents in the Documents tab.
-                  </p>
+              {/* Hearing details card — shown when hearing is scheduled or complete */}
+              {status.hearing && (status.status === 'HEARING_SCHEDULED' || status.status === 'HEARING_COMPLETE' || status.status === 'DECISION_ISSUED' || status.status === 'CLOSED') && (
+                <div className="vll-card" style={{ padding: 24, marginBottom: 16 }}>
+                  <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(2,101,163,0.08)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <i className="fa-solid fa-calendar-days" style={{ color: 'var(--theme-color)', fontSize: 14 }} />
+                    </span>
+                    Hearing Information
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }}>
+                    <div>
+                      <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Date &amp; Time</p>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>
+                        {new Date(status.hearing.hearingDate).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                        {' at '}
+                        {new Date(status.hearing.hearingDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                      </p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Format</p>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>{status.hearing.format}</p>
+                    </div>
+                    {status.hearing.location && (
+                      <div>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Location / Link</p>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>{status.hearing.location}</p>
+                      </div>
+                    )}
+                    {status.hearing.arbitratorName && (
+                      <div>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Arbitrator</p>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>{status.hearing.arbitratorName}</p>
+                      </div>
+                    )}
+                    {status.hearing.outcome && status.hearing.outcome !== 'PENDING' && (
+                      <div style={{ gridColumn: 'span 2' }}>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Outcome</p>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>{status.hearing.outcome}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
+
+              {/* Decision details card — shown when decision is issued */}
+              {status.decision && (
+                <div className="vll-card" style={{ padding: 24, marginBottom: 16, borderLeft: '4px solid var(--theme-color)' }}>
+                  <h3 style={{ fontSize: 'var(--text-base-med)', fontWeight: 700, color: 'var(--dark-color)', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(2,101,163,0.08)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <i className="fa-solid fa-gavel" style={{ color: 'var(--theme-color)', fontSize: 14 }} />
+                    </span>
+                    Decision
+                  </h3>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px' }}>
+                    <div>
+                      <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Decision</p>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--theme-color)', margin: 0 }}>{status.decision.decisionTypeFriendly}</p>
+                    </div>
+                    <div>
+                      <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Decision Date</p>
+                      <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--dark-color)', margin: 0 }}>
+                        {new Date(status.decision.decisionDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                      </p>
+                    </div>
+                    {status.decision.refundAmount != null && (
+                      <div>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Amount</p>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 700, color: 'var(--mass-primary-green)', margin: 0 }}>
+                          ${status.decision.refundAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
+                    )}
+                    {status.decision.complianceDeadline && (
+                      <div>
+                        <p style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--ms-gray-dark)', margin: '0 0 2px', textTransform: 'uppercase', letterSpacing: 0.5 }}>Compliance Deadline</p>
+                        <p style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#c2410c', margin: 0 }}>
+                          {new Date(status.decision.complianceDeadline).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
           )}
 
           {/* Tab: Documents */}
@@ -325,10 +474,36 @@ export default function Status() {
                           {new Date(doc.uploadedAt).toLocaleDateString()}
                         </p>
                       </div>
+                      <button
+                        onClick={() => handlePreviewDocument(doc.documentId)}
+                        disabled={previewingDocId === doc.documentId}
+                        style={{
+                          background: 'var(--theme-color)',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 6,
+                          padding: '6px 12px',
+                          fontSize: 'var(--text-xs)',
+                          fontWeight: 600,
+                          cursor: previewingDocId === doc.documentId ? 'wait' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 6,
+                          opacity: previewingDocId === doc.documentId ? 0.7 : 1,
+                          flexShrink: 0
+                        }}
+                      >
+                        {previewingDocId === doc.documentId ? (
+                          <><i className="fa-solid fa-spinner fa-spin" /> Loading...</>
+                        ) : (
+                          <><i className="fa-solid fa-eye" /> View</>
+                        )}
+                      </button>
                       <span style={{
                         fontSize: 'var(--text-xs)', fontWeight: 600, padding: '3px 10px', borderRadius: 12,
                         background: doc.status === 'ACCEPTED' ? '#dcfce7' : doc.status === 'REJECTED' ? '#fee2e2' : '#f3f4f6',
-                        color: doc.status === 'ACCEPTED' ? '#166534' : doc.status === 'REJECTED' ? '#991b1b' : '#374151'
+                        color: doc.status === 'ACCEPTED' ? '#166534' : doc.status === 'REJECTED' ? '#991b1b' : '#374151',
+                        flexShrink: 0
                       }}>
                         {doc.status.replace(/_/g, ' ')}
                       </span>

@@ -100,3 +100,27 @@ export const uploadPortalDocument = async (
   })
   return res.data
 }
+
+// ── Portal document preview URL ───────────────────────────────────────────────
+// Returns a 15-minute presigned S3 URL for previewing/downloading a document.
+export const getPortalDocumentPreviewUrl = async (
+  documentId: string,
+  caseNumber: string,
+  token?: string
+): Promise<string | null> => {
+  const params: Record<string, string> = { caseNumber }
+  if (token) params.token = token
+  const res = await client.get(API.PORTAL_DOCUMENT_PREVIEW(documentId), { params })
+  if (res.data?.success) return res.data.data as string
+  return null
+}
+
+// ── Application document preview URL (during wizard) ─────────────────────────
+export const getApplicationDocumentPreviewUrl = async (
+  applicationId: string,
+  documentId: string
+): Promise<string | null> => {
+  const res = await client.get(API.APPLICATION_DOCUMENT_PREVIEW(applicationId, documentId))
+  if (res.data?.success) return res.data.data as string
+  return null
+}

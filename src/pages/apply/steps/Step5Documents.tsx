@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useWizard } from '@/context/WizardContext'
 import WizardNav from '@/components/shared/WizardNav'
-import { uploadDocument, deleteDocument } from '@/services/applicationService'
+import { uploadDocument, deleteDocument, getApplicationDocumentPreviewUrl } from '@/services/applicationService'
 import { toast } from 'react-toastify'
 
 interface UploadedDoc {
@@ -37,6 +37,7 @@ export default function Step5Documents() {
   const [selectedType, setSelectedType] = useState('PURCHASE_CONTRACT')
   const [loading, setLoading] = useState(false)
   const [dragOver, setDragOver] = useState(false)
+  const [previewingDocId, setPreviewingDocId] = useState<string | null>(null)
 
   const appType = state.applicationType ?? 'NEW_CAR'
   const requiredDocs = REQUIRED_DOCS[appType] ?? REQUIRED_DOCS.NEW_CAR
@@ -108,6 +109,23 @@ export default function Step5Documents() {
     setDocs(d => d.filter(x => x.id !== doc.id))
   }
 
+  const handlePreviewDocument = async (documentId: string) => {
+    if (!applicationId) return
+    setPreviewingDocId(documentId)
+    try {
+      const url = await getApplicationDocumentPreviewUrl(applicationId, documentId)
+      if (url) {
+        window.open(url, '_blank')
+      } else {
+        toast.error('Failed to generate preview link.')
+      }
+    } catch {
+      toast.error('Failed to open document preview.')
+    } finally {
+      setPreviewingDocId(null)
+    }
+  }
+
   const handleNext = async () => {
     // Check all uploads are done (no in-progress)
     if (docs.some(d => d.status === 'uploading')) {
@@ -170,7 +188,34 @@ export default function Step5Documents() {
                       <p style={{ fontSize: 'var(--text-xs)', color: 'var(--ms-gray-dark)', margin: 0 }}>{DOC_TYPES.find(t => t.value === doc.type)?.label} · {doc.size}</p>
                     </div>
                     {doc.status === 'uploading' && <i className="fa-solid fa-spinner fa-spin" style={{ color: 'var(--theme-color)', fontSize: 13 }} />}
-                    {doc.status === 'done' && <i className="fa-solid fa-check-circle" style={{ color: 'var(--mass-primary-green)', fontSize: 14 }} />}
+                    {doc.status === 'done' && (
+                      <>
+                        <button
+                          onClick={() => handlePreviewDocument(doc.id)}
+                          disabled={previewingDocId === doc.id}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--theme-color)',
+                            cursor: previewingDocId === doc.id ? 'wait' : 'pointer',
+                            padding: 4,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 4,
+                            fontSize: 'var(--text-xs)',
+                            fontWeight: 600
+                          }}
+                          title="Preview document"
+                        >
+                          {previewingDocId === doc.id ? (
+                            <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 13 }} />
+                          ) : (
+                            <i className="fa-solid fa-eye" style={{ fontSize: 13 }} />
+                          )}
+                        </button>
+                        <i className="fa-solid fa-check-circle" style={{ color: 'var(--mass-primary-green)', fontSize: 14 }} />
+                      </>
+                    )}
                     {doc.status === 'error' && <i className="fa-solid fa-circle-exclamation" style={{ color: '#dc3545', fontSize: 14 }} />}
                     <button onClick={() => removeDoc(doc)} disabled={doc.status === 'uploading'} style={{ background: 'none', border: 'none', color: '#9ca3af', cursor: 'pointer', padding: 2 }} aria-label="Remove">
                       <i className="fa-solid fa-xmark" style={{ fontSize: 13 }} />
